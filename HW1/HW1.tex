@@ -1,0 +1,337 @@
+\documentclass{article}
+\textheight 590pt
+\textwidth 6.7in
+\evensidemargin 0pt
+\oddsidemargin 0pt
+\topmargin 0pt
+\pagestyle{empty}
+\usepackage{graphicx}
+\usepackage{amsmath}
+
+\begin{document}
+\begin{center}
+AA 543 Homework 1  \\
+Due Fri, Jan 13, 2012 \\
+Jonathan Varkovitzky
+\end{center}
+
+\newcommand{\ul}{\underline}
+\newcommand{\p}{\partial}
+
+
+\begin{enumerate}
+%*************************
+\item \textbf{Question 1:}
+\begin{enumerate}
+%******************
+\item \textbf{1.1:}
+The three equation for conservation of mass, momentum and energy are given below:
+
+\begin{enumerate}
+\item Conservation of Mass:
+\begin{equation}
+\boxed{\frac{\partial \rho}{\partial t} + \underline{\nabla}\cdot(\rho \underline{u}) = 0}
+\end{equation}
+
+\item Conservation of Momentum:
+\begin{equation}
+\boxed{\frac{\partial(\rho\underline{u})}{\partial t} + \underline{\nabla}\cdot(\rho \underline{u}\underline{u}) = \underline{\nabla}\underline{\sigma}+\rho \underline{F} }
+\end{equation}
+
+\item Conservation of Energy:
+\begin{equation}
+\boxed{\frac{\partial(\rho E)}{\partial t} + \underline{\nabla}\cdot(\rho\underline{u}E)=\rho \dot{q}+\underline{\nabla}\cdot(k\underline{\nabla}T)+\rho\underline{F}\cdot\underline{u}-\underline{\nabla} \cdot (p \underline{u})+\underline{\nabla}\cdot(\underline{\tau}\cdot\underline{u})}
+\end{equation}
+\end{enumerate}
+%******************
+\item \textbf{1.2:}
+We now derive the non-conservative form of the three equations above:
+
+\begin{enumerate}
+
+\item Mass:
+\begin{equation}
+\frac{\p \rho}{\p t} + \ul{\nabla}\cdot(\rho\ul{u}) = 0
+\label{mass1}
+\end{equation}
+Now we expand the $\ul{\nabla}\cdot(\rho\ul{u})$ term:
+\begin{equation}
+\ul{\nabla}\cdot(\rho\ul{u}) = \rho \ul{\nabla}\cdot \ul{u} + \ul{u}\cdot\ul{\nabla} \rho
+\end{equation}
+Plugging this into (\ref{mass1}) we get:
+\begin{equation}
+\frac{\p \rho}{\p t} + \rho \ul{\nabla}\cdot \ul{u} + \ul{u}\cdot\ul{\nabla} \rho = 0
+\label{mass2}
+\end{equation}
+We now use the definition of material derivatives $(\frac{D\rho}{Dt} = \frac{\p \rho}{\p t} + \ul{u}\cdot\ul{\nabla}\rho)$ and plug into (\ref{mass2}) to get the non-conservative form of mass conservation:
+\begin{equation}
+\boxed{\frac{D \rho}{Dt} + \rho \ul{\nabla}\cdot\ul{u} = 0}
+\end{equation}
+
+
+\item Momentum:
+\begin{equation}
+\frac{\p (\rho \ul{u})}{\p t} + \ul{\nabla}\cdot(\rho \ul{u}\ul{u}) = \ul{\nabla}\ \ul{\ul{\sigma}}+\rho\ul{F}
+\label{momentum}
+\end{equation} 
+
+Expanding the $\ul{\nabla}\cdot(\rho \ul{u}\ul{u})$ term gives us:
+
+\begin{equation}
+\ul{\nabla}\cdot(\rho \ul{u}\ul{u}) = \rho \ul{u}\cdot(\nabla\ul{u}) + \ul{u}\ul{\nabla}\cdot(\rho\ul{u})
+\label{expand1}
+\end{equation}
+
+Additionally, by multiplying the continuity equation by $\ul{u}$ we get:
+
+\begin{equation}
+\ul{u} \frac{\p \rho}{\p t} + \ul{u}\ul{\nabla}\cdot(\rho \ul{u})
+\label{ucontinuity}
+\end{equation}
+
+
+We expand $\frac{\p (\rho\ul{u})}{\p t}$ using product rule to get:
+\begin{equation}
+\frac{\p (\rho\ul{u})}{\p t} = \ul{u}\ \frac{\p \rho}{\p t} + \rho \frac{\p \ul{u}}{\p t}
+\label{prodRule}
+\end{equation}
+
+Plugging in equations (\ref{expand1}) and (\ref{prodRule}) into equation (\ref{momentum}) we get:
+
+\begin{equation}
+\ul{u} \frac{\p \rho}{\p t} + \rho \frac{\p \ul{u}}{\p t} + \rho \ul{u} \cdot (\nabla \ul{u}) + \ul{u}\ul{\nabla}\cdot(\rho \ul{u}) = \ul{\nabla}\cdot \ul{\ul{\sigma}} + \rho \ul{F}
+\label{bigMess}
+\end{equation}
+
+We now subtract equation (\ref{ucontinuity}) from equation(\ref{bigMess}) to give us:
+
+\begin{equation}
+\rho \frac{\p \ul{u}}{\p t} + \rho \ul{u} \cdot(\nabla \ul{u}) = \ul{\nabla}\cdot\ul{\ul{\sigma}} + \rho \ul{F}
+\label{almostThere}
+\end{equation}
+
+We now finally need the definition of a material derivative:
+
+\begin{equation}
+\frac{D\ul{u}}{Dt} = \frac{\p \ul{u}}{\p t} + \ul{u}\cdot\ul{\nabla}\ul{u}
+\end{equation}
+
+Applying this to equation (\ref{almostThere}) we get the non-conservative form of momentum conservation:
+
+\begin{equation}
+\boxed{\rho \frac{D\ul{u}}{Dt} = \ul{\nabla}\cdot\ul{\ul{\sigma}} + \rho \ul{F}}
+\end{equation}
+
+\item Energy:
+
+\begin{equation}
+\frac{\partial(\rho E)}{\partial t} + \underline{\nabla}\cdot(\rho\underline{u}E)=\rho \dot{q}+\underline{\nabla}\cdot(k\underline{\nabla}T)+\rho\underline{F}\cdot\underline{u}-\underline{\nabla} \cdot (p \underline{u})+\underline{\nabla}\cdot(\underline{\tau}\cdot\underline{u})
+\label{energy}
+\end{equation}
+
+We can combine the last two terms of equation (\ref{energy}) using the following relation:
+
+\begin{equation}
+-\ul{\nabla}\cdot(\rho\ul{u}) + \ul{\nabla}\cdot(\ul{\ul{\tau}}\cdot\ul{u}) = \ul{\nabla}\cdot(\ul{\ul{\sigma}}\cdot\ul{u})
+\label{sigmaEqn}
+\end{equation}
+
+We can now simplify equation (\ref{energy}) by the relation in equation (\ref{sigmaEqn}):
+
+\begin{equation}
+\frac{\partial(\rho E)}{\partial t} + \underline{\nabla}\cdot(\rho\underline{u}E)=\rho \dot{q}+\underline{\nabla}\cdot(k\underline{\nabla}T)+\rho\underline{F}\cdot\underline{u}+\ul{\nabla}\cdot(\ul{\ul{\sigma}}\cdot\ul{u})
+\label{energySimple}
+\end{equation}
+
+We now integrate equation (\ref{energySimple}) over an arbitrary volume which will allow us to use certain relations later:
+
+\begin{equation}
+\int_V \frac{\partial(\rho E)}{\partial t} + \underline{\nabla}\cdot(\rho\underline{u}E)\ dV = \int_V \rho \dot{q}\ dV + \int_V \underline{\nabla}\cdot(k\underline{\nabla}T)\ dV + \int_V \rho\underline{F}\cdot\underline{u}\ dV + \int_V\ul{\nabla}\cdot(\ul{\ul{\sigma}}\cdot\ul{u})\ dV
+\label{intEnergySimple}
+\end{equation}
+
+We now convert the left hand side into a material derivative via the Reynolds Transport Theorem:
+
+\begin{equation}
+\int_V \frac{\partial(\rho E)}{\partial t} + \underline{\nabla}\cdot(\rho\underline{u}E)\ dV = \frac{D}{Dt}\int_V \rho E\ dV
+\label{RTT}
+\end{equation}
+
+Additionally, we use Gauss' Theorem to covert the following terms:
+
+\begin{eqnarray}
+&&\int_V \underline{\nabla}\cdot(k\underline{\nabla}T)\ dV = \oint_S k\cdot \ul{n}\ dS\nonumber \\
+&&\int_V\ul{\nabla}\cdot(\ul{\ul{\sigma}}\cdot\ul{u})\ dV = \oint_S (\ul{\ul{\sigma}}\cdot\ul{u})\cdot\ul{n}\ dS
+\label{gauss}
+\end{eqnarray}
+
+Substituting equations (\ref{RTT} \& \ref{gauss}) into equation (\ref{intEnergySimple}) we get the non-conservative form of energy conservation:
+
+\begin{equation}
+\boxed{\frac{D}{Dt}\int_V \rho E\ dV = \int_V \rho \dot{q}\ dV + \oint_S k\cdot \ul{n}\ dS + \int_V \rho\underline{F}\cdot\underline{u}\ dV + \oint_S (\ul{\ul{\sigma}}\cdot\ul{u})\cdot\ul{n}\ dS}
+\end{equation}
+
+
+\end{enumerate}
+
+\end{enumerate}
+
+
+%*************************
+\item \textbf{Question 2:}
+\begin{enumerate}
+%******************
+\item \textbf{2.1:}
+We begin with the 3-D momentum equation for a viscous, unsteady, and compressible flow.
+\begin{equation}
+\rho \frac{Du}{Dt} = \underline{\nabla}\cdot\underline{\sigma}+\rho \underline{F}
+\end{equation}
+We now can derive the 1-D equation by expanding the $\sigma$ term and converting the $\nabla$'s into derivatives strictly in x. To give us:
+
+\begin{eqnarray}
+&& \rho \frac{\partial u}{\partial t} + \rho u \frac{\partial u}{\partial t} = \frac{\partial}{\partial x}\left[\mu(2\frac{\partial u}{\partial x})-\frac{2}{3}\mu\frac{\partial u}{\partial x} \right] + \rho F - \frac{\partial p}{\partial x}\nonumber \\
+&& \boxed{\rho \frac{\partial u}{\partial t} + \rho u \frac{\partial u}{\partial t} = \frac{4}{3}\mu\frac{\partial^2 u}{\partial x^2} + \rho F - \frac{\partial p}{\partial x}}
+\end{eqnarray}
+
+%******************
+\item \textbf{2.2:}
+Dropping the pressure gradient term and dividing the equation by $\rho$ we get:
+\begin{equation}
+\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial t} = \frac{4}{3}\nu\frac{\partial^2 u}{\partial x^2} +  F,\ \nu = \frac{\mu}{\rho}
+\end{equation}
+We can now reduce this second order equation into a first order system:
+
+\begin{equation}
+  \left\{\begin{array}{l}
+    \frac{\partial u}{\partial x} = v\\
+    \frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} - \frac{4}{3}\nu\frac{\partial v}{\partial x} = F \end{array}\right.
+\end{equation}
+
+We now convert this into matrix form and look at the homogeneous component:
+
+\begin{equation}
+\left[\begin{array}{cc} 1 & 0 \\ 0 & 0\end{array} \right] \frac{\partial}{\partial t}\left[\begin{array}{c}u \\ v \end{array} \right] + \left[\begin{array}{cc}u & \frac{-4}{3}\nu \\ 1 & 0  \end{array} \right]\frac{\partial}{\partial x}\left[\begin{array}{c}u \\ v \end{array} \right]=0
+\end{equation}
+
+Allowing $m_1 = \frac{\partial}{\partial t}\left[\begin{array}{c}u \\ v \end{array} \right]$ and $m_2 = \frac{\partial}{\partial x}\left[\begin{array}{c}u \\ v \end{array} \right]$ we take the determinant of the system and set it to zero
+
+\begin{eqnarray}
+&& \left|\left[\begin{array}{cc} 1 & 0 \\ 0 & 0\end{array} \right] m_1 + \left[\begin{array}{cc}u & \frac{-4}{3}\nu \\ 1 & 0  \end{array} \right] m_2 \right|=0 \nonumber \\
+&& \left|\left[\begin{array}{cc} m_1 + m_2 u & \frac{-4}{3}\nu m_2  \\ m_2 & 0\end{array} \right]\right| = 0\nonumber \\
+&& \Rightarrow m_2 = 0 
+\end{eqnarray}
+
+This implies that the matrix is rank 1, since this is not full rank it implies that the system is \fbox{parabolic}.
+
+\end{enumerate}
+
+
+%*************************
+\item \textbf{Question 3:}
+\begin{enumerate}
+%******************
+\item \textbf{3.1:}
+We derive the 1-D inviscid flow equations from the full 3-D NS equations:
+
+\begin{enumerate}
+\item Mass: No reduction is needed:
+
+\begin{equation}
+\boxed{\frac{\p \rho}{\p t} + \frac{\p (\rho u)}{\p x} = 0}
+\end{equation}
+
+\item Momentum:
+
+\begin{eqnarray}
+&&\frac{\p (\rho u)}{\p t} + \frac{\p (\rho u^2)}{\p x} = -\frac{\p p}{\p x} + \frac{\p \tau}{\p x} + \rho F\nonumber \\
+&& \Rightarrow \boxed{\frac{\p (\rho u)}{\p t} + \frac{\p (\rho u^2)}{\p x} = -\frac{\p p}{\p x} + \rho F}
+\end{eqnarray}
+
+\item Energy:
+We used equation (1.4.14) from the text:
+\begin{equation}
+\boxed{\frac{\p (\rho e)}{\p t} + \frac{\p (\rho u h)}{\p x} = u \frac{\p p}{\p x} + \frac{\p}{\p x}\left(k \frac{\p T}{\p x} \right)+\epsilon_V + q_H}
+\label{energyEqn}
+\end{equation}
+
+\end{enumerate}
+%******************
+\item \textbf{3.2:}
+
+Since we are assuming the fluid is isentropic we know that $\frac{\p s}{\p T} = 0$ and hence use the following relation to cancel out the last three terms in the equation:
+
+\begin{equation}
+\rho T \frac{\p s}{\p T} = \epsilon_V+\nabla\cdot(k\nabla T)+q_H
+\end{equation}
+
+Plugging this into equation (\ref{energyEqn}):
+\begin{equation}
+\frac{\p (\rho e)}{\p t} + \frac{\p (\rho u h)}{\p x} = u \frac{\p p}{\p x}
+\label{justABitMore}
+\end{equation}
+
+Now we use the following definitions to reduce equation (\ref{justABitMore}):
+
+\begin{eqnarray}
+&&h = c_pT = \frac{\gamma}{\gamma-1} \frac{p}{\rho}\nonumber \\
+&&e = \frac{1}{\gamma-1} \frac{p}{\rho}\nonumber \\
+\end{eqnarray}
+
+This gives us:
+
+\begin{eqnarray}
+&& \frac{1}{\gamma-1}\frac{\p p}{\p t} + \frac{\gamma}{\gamma-1} \frac{\p (up)}{\p x} = u \frac{\p p}{\p x}\nonumber \\
+&& \frac{1}{\gamma-1}\frac{\p p}{\p t} + \left(\frac{\gamma}{\gamma-1}-1\right)u \frac{\p p}{\p x} + \frac{\gamma}{\gamma-1}p\frac{\p u}{\p x}= 0\nonumber \\
+&& \frac{\p p}{\p t} + u \frac{\p p}{\p x} = -\gamma p \frac{\p u}{\p x} \nonumber \\
+&& \Rightarrow \boxed{\frac{\p p}{\p t} + u \frac{\p p}{\p x} = -\rho c^2 \frac{\p u}{\p x}}
+\end{eqnarray}
+
+%******************
+\item \textbf{3.3:}
+Before we can determine the eigenvalues and type of the system of PDEs we must first expand a number of terms from the equations laid out previously in this question using product rule and additionally drop any non-homogeneous terms.  
+
+\begin{enumerate}
+\item Mass:
+\begin{eqnarray}
+&& \frac{\p \rho}{\p t} + \frac{\p (\rho u)}{\p x} = 0 \nonumber \\
+&& \Rightarrow \frac{\p \rho}{\p t} + u \frac{\p \rho}{\p x} + \rho \frac{\p u}{\p x}= 0
+\end{eqnarray}
+
+\item Momentum:
+\begin{eqnarray}
+&& \frac{\p (\rho u)}{\p t} + \frac{\p (\rho u^2)}{\p x} = -\frac{\p p}{\p x} \nonumber \\
+&& \Rightarrow u \frac{\p \rho }{\p t} + \rho \frac{\p u }{\p t} + u \frac{\p (\rho u) }{\p x} + \rho u \frac{\p u }{\p x} = -\frac{\p p }{\p x}\nonumber \\
+&& \Rightarrow \rho \frac{\p u }{\p t} + \rho u \frac{\p u }{\p x} + \frac{\p p }{\p x} = 0
+\end{eqnarray}
+
+\item Energy:
+As solved for in part 3.2:
+\begin{equation}
+\frac{\p p}{\p t} + u \frac{\p p}{\p x} + \rho c^2 \frac{\p u}{\p x} = 0
+\end{equation}
+\end{enumerate}
+
+
+We now take the above equations and need to put them into a vector form, this yields the following system:
+
+\begin{equation}
+\frac{\p}{\p t} \left[\begin{array}{c} \rho \\ u \\ p \end{array}\right]+\left[\begin{array}{ccc} u & 1 & 0 \\ 0 & u & \frac{1}{\rho}\\0 & \rho c^2 & u \end{array} \right]\frac{\p}{\p x} \left[\begin{array}{c} \rho \\ u \\ p \end{array}\right]
+\end{equation}
+
+This system is of the form $\frac{\p \vec{u}}{\p t} + A \frac{\p \vec{u}}{\p x} = 0$, which impels that we want a solution of the form $\vec{u} = \hat{u} e^{I(kx-\omega t)}$. Hence the A matrix contains the eigenvalue information we need to use to determine the classification of the system.
+
+\begin{eqnarray}
+&& 0 = det \left|\begin{array}{ccc} u & 1 & 0 \\ 0 & u & \frac{1}{\rho}\\0 & \rho c^2 & u \end{array} \right| = (uk - \omega)\left[(uk-\omega)^2-k^2c^2 \right]\nonumber \\
+&& \Rightarrow \boxed{\omega_1 = uk}\nonumber \\
+&& \Rightarrow (uk-\omega)^2-k^2c^2 = 0 \nonumber \\
+&& \Rightarrow \omega^2 - \omega 2uk+(uk)^2-(kc)^2 = 0\nonumber \\
+&& \Rightarrow \omega_{2,3} = \frac{2uk}{2} \pm \frac{\sqrt{4(uk)^2-4(uk)^2+k^2c^2}}{2}\nonumber \\
+&& \Rightarrow \boxed{ \omega_{2,3} = uk \pm kc}
+\end{eqnarray}
+
+The fact that we have three eigenvalues that are real implies that the system is \fbox{hyperbolic}.
+
+\end{enumerate}
+
+\end{enumerate}
+\end{document}

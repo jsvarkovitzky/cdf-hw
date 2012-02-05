@@ -1,0 +1,739 @@
+\documentclass[a4paper,12pt,titlepage]{article}
+
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{float}
+
+\parindent=0pt% This enforces no indent!
+\newcommand{\scale}{0.5}
+\begin{document}
+
+
+
+\title{Exploration of Finite Difference Methods}
+\author{Jonathan Varkovitzky}
+\maketitle
+
+\pagestyle{plain} % No headers, just page numbers
+\pagenumbering{roman} % Roman numerals
+\tableofcontents
+
+\newpage
+
+\pagenumbering{roman}
+\setcounter{page}{2}
+\listoffigures
+
+\newpage
+
+\pagenumbering{arabic}
+\abstract{We investigate the accuracy of various explicit and implicit numerical methods for solving both the heat diffusion equation and linear convection equations in one dimension.  For the methods used to solve the linear convection problem we also investigate the dispersion and dissipation errors of the methods.}
+
+\newpage
+
+
+
+\section{One Dimensional Heat Conduction Problem}
+
+In this problem we investigate two numerical methods for computing the solution to the one dimensional heat conduction equation.  The methods used were one-step forward in time and one-step backwards in time, both using centered differences in space.  The specific problem posed for us to solve was as follows:
+
+\begin{eqnarray}
+&& u_t = \alpha u _{xx}\nonumber \\
+&&u(x,t=0) = \left\{\begin{array}{lll} 2x & \mbox{if} & x \in[0,0.5] \\ 2-2x & \mbox{if} & x \in[0.5,1]\end{array}  \right.\nonumber \\
+&&u(x=0,t) = u(x=1,t) = 0
+\label{heatStatement}
+\end{eqnarray}
+
+\subsection{Analytic Solution}
+
+To find the analytic solution of this system is found using the separation of variables method.  We begin by breaking up $u(x,t)$ as follows:
+
+\begin{equation}
+u(x,t) = X(x)T(t)
+\end{equation}
+
+We can now take this and plug it into equation \ref{heatStatement} yielding the following two equations:
+
+\begin{eqnarray}
+&& \frac{dT}{dt} = -\lambda_n \alpha T(t)\\
+\label{DTdt}
+&& \frac{d^2X}{dx^2} = -\lambda_n X(x)
+\label{D2Xdx2}
+\end{eqnarray}
+
+$\lambda$ is an unknown constant.  However, we know that it is positive as any value such that $\lambda \le 0$ would result in the trivial solution $u(x,t) = 0$ with the given boundary conditions.  We can now solve the two simple ordinary differential equations above give that $\lambda > 0$ giving us the following:
+
+\begin{eqnarray}
+&& T(t) = A e^{-\lambda_n \alpha t}\\
+&& X(x) = B_n \sin(\sqrt(\lambda_n)x) + C_n\cos(\sqrt(\lambda_n)x)
+\end{eqnarray}
+
+We now apply the boundary conditions to compute values for $B_n$ and $C_n$:
+
+\begin{eqnarray}
+&&u(0,t) = 0 \Rightarrow x(0) = B_n \sin(0) + C_n\cos(0) = 0 \Rightarrow C_n = 0\\
+&&u(1,t) = 0 \Rightarrow x(1) = B_n \sin(\sqrt(\lambda_n)x) \Rightarrow \lambda_n = n^2\pi^2
+\end{eqnarray}
+
+Combining these results we see that:
+
+\begin{equation}
+u(x,t) = \sum_{n=1}^{\infty}D_n e^{-(n\pi)^2t}sin(n\pi x)
+\end{equation}
+
+We now need to apply the initial conditions to compute the coefficients of the above Fourier solution by using the following formula and integration by parts:
+
+\begin{eqnarray}
+&& D_n = 2 \int_0^1 u(x,0) sin(n\pi x)dx\nonumber \\
+&& D_n = 4 \left\{\int_0^{1/2} x \sin(n \pi x) dx + \int_{0}^{1/2} \sin(n \pi x) dx - \int_{1/2}^1 x \sin(n \pi x)dx \right\}\nonumber \\
+&& D_n = 4 \left\{\frac{2}{n \pi} sin(\frac{n \pi}{2}) \right\} = \frac{8}{n \pi} \sin(\frac{n \pi}{2}) 
+\end{eqnarray}
+
+Using this Fourier coefficient we now know the analytic solution to equation \ref{heatStatement} is:
+
+\begin{equation}
+\boxed{u(x,t) = \sum_{n=0}^{\infty} \frac{8}{n \pi} \sin(\frac{n \pi}{2})\sin(n \pi x) }
+\end{equation}
+
+\subsection{Numerical Algorithms}
+We now want to apply two different numerical schemes to solve the heat equation as stated in equation \ref{heatStatement}.  
+
+\subsubsection{One-Step Forward in Time and Second-Order Central Difference in Space (explicit)}
+The form of this scheme is given below and is applied in the code to generate the results plotted in the following subsection.
+
+\begin{equation}
+u_{i}^{n+1} = u_{i}^{n} + \frac{\alpha \Delta t}{\Delta x^2}\left(u_{i+1}^n -2 u_{i}^{n} + u_{i-1}^n\right)
+\end{equation}
+
+\subsubsection{One-Step Backwards in Time and Second-Order Central Difference in Space (implicit)}
+The form of this scheme is given below and is applied in the code to generate the results plotted in the following subsection.
+
+\begin{equation}
+u_{i}^{n+1} = u_{i}^{n} + \frac{\alpha \Delta t}{\Delta x^2}\left(u_{i+1}^{n+1} -2 u_{i}^{n+1} + u_{i-1}^{n+1}\right)
+\end{equation}
+
+
+\subsection{Numerical Solutions and Discussion}
+We now use the above methods to compute the numerical solutions given $\Delta x = 0.05$ and $\Delta t = 0.0012$ and outputted the results at times $t = 0,\ \Delta t,\ 10 \Delta t,\ 50 \Delta t$.
+
+We first look at the forward in time explicit method with the two different time steps.  When comparing the outputs at the respective time steps and see that when $dt = 0.0013$ the numerical scheme is unstable.  This is expected from considering the CFL number for the $dt = 0.0012$ and $dt = 0.0013$ are $0.479$ and $0.519$ respectively, and it is known that a scheme with a CFL number greater than $0.5$ will be unstable.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_00_dt_11.png}
+    \caption{Explicit Heat Profile at time t = 0 with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_01_dt_11.png}
+    \caption{Explicit Heat Profile at time t = dt with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_10_dt_11.png}
+    \caption{Explicit Heat Profile at time t = 10 dt with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_50_dt_11.png}
+    \caption{Explicit Heat Profile at time t = 50 dt with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_00_dt_13.png}
+    \caption{Explicit Heat Profile at time t = 0 with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_01_dt_13.png}
+    \caption{Explicit Heat Profile at time t = dt with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_10_dt_13.png}
+    \caption{Explicit Heat Profile at time t = 10 dt with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_fdcd_50_dt_13.png}
+    \caption{Explicit Heat Profile at time t = 50 dt with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+
+Next we look at the backwards in time implicit method with the two different time steps.  When comparing the outputs at the respective time steps we notice that the method is stable regardless of the CFL number.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_00_dt_11.png}
+    \caption{Implicit Heat Profile at time t = 0 with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_01_dt_11.png}
+    \caption{Implicit Heat Profile at time t = dt with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_10_dt_11.png}
+    \caption{Implicit Heat Profile at time t = 10 dt with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_50_dt_11.png}
+    \caption{Implicit Heat Profile at time t = 50 dt with dt = 0.0012}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_00_dt_13.png}
+    \caption{Implicit Heat Profile at time t = 0 with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_01_dt_13.png}
+    \caption{Implicit Heat Profile at time t = dt with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_10_dt_13.png}
+    \caption{Implicit Heat Profile at time t = 10 dt with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{heat_bdcd_50_dt_13.png}
+    \caption{Implicit Heat Profile at time t = 50 dt with dt = 0.0013}
+  \end{center}
+\end{figure}
+
+
+
+\section{One Dimensional Linear Convection}
+
+In this problem we investigate the application of three numerical methods to the one dimensional linear convection problem.  These methods are one-step forward in time with a first order upwind method (explicit), Lax-Wendroff (explicit), and the backwards in time upwind in space(implicit) method.  The specific problem we solved is:
+
+\begin{eqnarray}
+&& u_t + u_x = 0\nonumber \\
+&& u(x,t=0) = \left\{\begin{array}{lll}1 & \mbox{if} & x \in [-7,-5]\\ 0 & \mbox{else} &  \end{array} \right.\nonumber \\
+&& u(x = -10,t) = 0
+\end{eqnarray}
+
+\subsection{Numerical Schemes}
+For each numerical scheme I include the formula used to program each method.  Note that $\sigma = \frac{a \Delta t}{\Delta x}$.
+
+\subsubsection{One-Step Forward in Time and First-Order Upwind in Space Method}
+\begin{equation}
+u_{i}^{n+1} = u_{i}^n - \sigma (u_i^n-u_{i-1}^n)
+\end{equation}
+
+\subsubsection{Lax-Wendroff Method}
+\begin{equation}
+u_{i}^{n+1} = u_{i}^n - \frac{\sigma}{2} (u_i^n-u_{i-1}^n) + \frac{\sigma^2}{2}(u_{i+1}^n-2u_i^n+u_{i-1}^n)
+\end{equation}
+
+\subsubsection{Implicit Backwards in Time and First-Order Upwind in Space Method}
+\begin{equation}
+u_{i}^{n+1} - \sigma(u_{i+1}^{n+1}-u_{i-1}^{n+1}) = u_i^n
+\end{equation}
+
+\subsection{Numerical Solutions}
+We now look at the outputs of the above schemes when applied using both CFL numbers of 0.6 and 1.2. 
+ We first look at the results using the one-step forward in time method and notice that when the CFL number is 1.2 we have instability, just as we expect.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{advect_fdcd_250_dt_600.png}
+    \caption{Explicit Edition at time 15 = 0 with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{advect_fdcd_125_dt_1200.png}
+    \caption{Explicit Advection at time t = 15 with CFL = 1.2}
+  \end{center}
+\end{figure}
+
+Next we look at the Lax-Wendroff method and we again see that the stable case is when the CFL number is less than 1.  However we additionally notice that in the stable case there appears to be dispersion.  This is expected from the Lax-Wendroff and so this does not concern us, however we may want to use a less dispersive method.
+ 
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{advect_lw_250_dt_600.png}
+    \caption{Lax-Wendroff Advection at time 15 = 0 with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{advect_lw_125_dt_1200.png}
+    \caption{Lax-Wendroff Advection at time t = 15 with CFL = 1.2}
+  \end{center}
+\end{figure}
+ 
+The final case we consider a backwards in time and upwind in space implicit method.  We notice that in both cases there is diffusion, however it is smaller in the $CFL = 0.6$ case.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{advect_implicit_250_dt_600.png}
+    \caption{Implicit Advection at time 15 = 0 with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{advect_implicit_125_dt_1200.png}
+    \caption{Implicit Advection at time t = 15 with CFL = 1.2}
+  \end{center}
+\end{figure}
+
+\subsection{Dispersive and Dissipation Error}
+
+We now investigate the dispersive and dissipation error of the three methods used previously to solve this problem.  We begin with the equation representing each respective scheme and derive the two types of error, and then plot them in phase space.
+
+\subsubsection{One-Step Forward in Time and First-Order Upwind in Space}
+\begin{eqnarray}
+&&u_{i}^{n+1} = u_{i}^n - \sigma (u_i^n-u_{i-1}^n)\nonumber \\
+&&v^{n+1}e^{Ii\phi} = v^{n}e^{Ii\phi} - \sigma(v^{n}e^{Ii\phi}-v^{n}e^{I(i-1)\phi})\nonumber \\
+&&\boxed{\epsilon_D = \left|\frac{V^{n+1}}{V^n}\right| = \left|1-\sigma(1-e^{-I\phi})\right|}\nonumber \\
+&&\Phi = tan^{-1}\left(-\frac{Im(G)}{Re(G)} \right) = tan^{-1}\left(\frac{\sigma \sin(\phi)}{1-\sigma(1-\cos(\phi)} \right)\nonumber \\
+&&\boxed{\epsilon_\Phi = \frac{1}{\sigma \phi} tan^{-1}\left(\frac{\sigma \sin(\phi)}{1-\sigma(1-\cos(\phi)} \right)}
+\end{eqnarray}
+
+Plotting these errors we get the following:
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{diff_error_cfl_6_fdcd.png}
+    \caption{Dispersion Error Forward Difference in Time and Centered Difference in Space with CFL = 0.3}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{diff_error_cfl_12_fdcd.png}
+    \caption{Dispersion Error Forward Difference in Time and Centered Difference in Space with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{disp_error_cfl_6_fdcd.png}
+    \caption{Dissipation Error Forward Difference in Time and Centered Difference in Space with CFL = 0.3}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{disp_error_cfl_12_fdcd.png}
+    \caption{Dissipation Error Forward Difference in Time and Centered Difference in Space with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+When looking at the dispersion error we notice that when the CFL number is greater than one half we have dispersion greater than one, while when CFL is less than one half this does not occur.  Additionally, when looking at the dissipation error we notice that when the CFL is greater than one half there is a discontinuity while for CFL values less than this there is no discontinuity.
+
+\subsubsection{Lax-Wendroff Method}
+\begin{eqnarray}
+&&u_{i}^{n+1} = u_{i}^n - \frac{\sigma}{2} (u_i^n-u_{i-1}^n) + \frac{\sigma^2}{2}(u_{i+1}^n-2u_i^n+u_{i-1}^n)\nonumber \\
+&&V^{n+1}e^{Ii\phi} = V^{n}e^{Ii\phi} - \frac{\sigma}{2}(V^{n}e^{I(i+1)\phi}-V^{n}e^{I(i-1)\phi})+\frac{\sigma^2}{2}(V^{n}e^{I(i+1)\phi}-2V^{n}e^{Ii\phi}+V^{n}e^{I(i-1)\phi})\nonumber \\
+&& \boxed{\epsilon_{D} = \left|\frac{V^{n+1}}{V^n}\right| = \left|1-I\sigma \sin(\phi) + \sigma^2\cos(\phi) \right|} \nonumber \\
+&&\Phi = tan^{-1}\left(-\frac{Im(G)}{Re(G)} \right) = tan^{-1}\left(\frac{\sigma \sin(\phi)}{1-\sigma^2(\cos(\phi)-1)} \right)\nonumber \\
+&&\boxed{\epsilon_{\Phi} = \frac{1}{\sigma \phi} tan^{-1}\left(\frac{\sigma \sin(\phi)}{1-\sigma^2(\cos(\phi)-1)} \right)}
+\end{eqnarray}
+
+Plotting these errors we get the following:
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{diff_error_cfl_6_LW.png}
+    \caption{Dispersion Error for Lax-Wendroff Method with CFL = 0.3}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{diff_error_cfl_12_LW.png}
+    \caption{Dispersion Error for Lax-Wendroff Method with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{disp_error_cfl_6_LW.png}
+    \caption{Dissipation Error for Lax-Wendroff Method with CFL = 0.3}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{disp_error_cfl_12_LW.png}
+    \caption{Dissipation Error for Lax-Wendroff Method with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+
+
+\subsubsection{Implicit Backwards in Time and First-Order Upwind Method}
+\begin{eqnarray}
+&&u_{i}^{n+1} - \sigma(u_{i+1}^{n+1}-u_{i-1}^{n+1}) = u_i^n\nonumber \\
+&&V^{n+1}e^{Ii\phi} - \sigma(V^{n+1}e^{I(i+1)\phi}-V^{n+1}e^{I(i-1)\phi} = V^{n}e^{Ii\phi}\nonumber \\
+&&\boxed{\epsilon_D = \left|\frac{V^{n+1}}{V^n} \right| = 1-\sigma I \sin(\phi)}\nonumber \\
+&&\Phi = tan^{-1}\left(-\frac{Im(G)}{Re(G)} \right) = tan^{-1}\left(\sigma \sin(\phi) \right)\nonumber \\
+&&\boxed{\epsilon_\phi = \frac{1}{\sigma \phi}tan^{-1}\left(\sigma \sin(\phi) \right)}
+\end{eqnarray}
+
+Plotting these errors we get the following:
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{diff_error_cfl_6_Implicit.png}
+    \caption{Dispersion Error for the Implicit Method with CFL = 0.3}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{diff_error_cfl_12_Implicit.png}
+    \caption{Dispersion Error for the implicit Method with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{disp_error_cfl_12_Implicit.png}
+    \caption{Dissipation Error for the Implicit Method with CFL = 0.3}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{disp_error_cfl_12_Implicit.png}
+    \caption{Dissipation Error for the Implicit Method with CFL = 0.6}
+  \end{center}
+\end{figure}
+
+We notice that regardless of CFL number the dispersion error is largest for mid ranged phases.  This explains why we see diffusion in both cases in the numerical results, though the extent of them varies.
+
+% begin appendix
+\appendix
+
+% add ``Appendix'' to the section heading
+\newcommand{\appsection}[1]{\let\oldthesection\thesection
+  \renewcommand{\thesection}{Appendix \oldthesection}
+  \section{#1}\let\thesection\oldthesection}
+
+% example (otherwise, use just \section)
+\appsection{Code for Question \# 1:}
+
+\begin{verbatim}
+#This program computes and plots the results of HW2 Question 1
+#Jonathan Varkovitzky
+#Jan 22, 2012
+
+from numpy import *
+from matplotlib import *
+from pylab import *
+import scipy as sp
+import scipy.sparse
+
+#######################
+## Analytic Solution ##
+#######################
+
+def analyticHeat(n,x,t):
+    numTerms = 100
+    uAnalytic = zeros(n+1)
+    for k in range(1,numTerms+1):
+        uAnalytic = uAnalytic + 8*sin(k*pi/2)/(k*pi)**2*sin(k*pi*x)*exp(-(k*pi)**2*t)
+
+    return uAnalytic
+
+
+#############
+## Set ICs ##
+#############
+
+def ICs(x,u):
+    for i in range(0,n):
+        
+        if x[i]<0.5:
+            u[i,0] = 2*x[i]
+        else:
+            u[i,0] = 2-2*x[i]
+            
+    return(u)
+
+#############################
+## Marches forward in time ##
+#############################
+
+
+def calcSoln(x,u,j):
+    #Explicit Forward Difference Method
+    if j == 0: 
+        for k in range(0,T):
+            for i in range(1,n):
+                u[i,k+1] = u[i,k]+a*dt/dx**2*(u[i+1,k]-2*u[i,k]+u[i-1,k])
+
+
+    #Implicit Backwards Difference Method
+    if j == 1:
+        #Define A matrix as stencil to act on internal points
+        diag_rows = np.array([ones(n-1),-2*ones(n-1),ones(n-1)])
+        positions = [-1, 0, 1]
+        A = sp.sparse.spdiags(diag_rows, positions, n-1, n-1).todense()
+        A = A*a*dt/dx**2
+        w = u[1:n,0:T+1] #Selecting out only the interal points of u to act on
+
+        #Update U over many time steps
+        for k in range(0,T):
+            w[:,k+1] = solve(eye(n-1)-A,w[:,k])
+        u[1:n,0:T+1] = w[:,0:T+1] #Reincorperate internal points and BCs
+    return(u)
+##############
+## Plotting ##
+##############
+
+def plotting(x,u,dt,i):
+    uAnalytic = analyticHeat(n,x,i*dt)
+    figure(i)
+    clf()
+    plot(x,u[:,i],'b')      #Plot computed solution
+    plot(x,uAnalytic,'r--') #Plot analytic solution
+    xlabel('x')
+    ylabel('u(x,t)')
+    legend(('Numerical Solution','Analytic Solution'))
+    axis([0, 1, 0, 1])
+    dT = int(dt*10000)
+    if j == 0:
+        savefig('heat_fdcd_%s_dt_%r'%(str(i).zfill(2),dT))
+    elif j == 1:
+        savefig('heat_bdcd_%s_dt_%r'%(str(i).zfill(2),dT))
+
+##################
+## Main Program ##
+##################
+
+close ('all')
+
+# One step forward difference in time and centered difference in space
+dx = 0.05
+DT = [0.0012, 0.0013]
+T = 50
+xMin = 0
+xMax = 1
+n = int((xMax-xMin)/dx)
+
+for m in range(0,2):
+    dt = DT[m]
+    print "Computing and plotting solutions for dt = %s" %dt
+    for j in range(0,2):
+        
+        u = zeros((n+1,T+1))
+        x = linspace(0,1,n+1)
+        a = 1
+        
+        # Set ICs
+        u = ICs(x,u)
+
+        # Loop through remaining time steps to compute solution
+        u = calcSoln(x,u,j)
+        
+        # Plot desired timestpes
+        plotTimes = [0,1,10,50]
+    
+        for i in range(0,4):
+            plotting(x,u,dt,plotTimes[i])
+
+
+\end{verbatim}
+
+\appsection{Code for Question \# 2:}
+
+\begin{verbatim}
+#This program computes and plots the results of HW2 Question 2
+#Jonathan Varkovitzky
+#Jan 25, 2012
+
+from numpy import *
+from matplotlib import *
+from pylab import *
+import scipy as sp
+import scipy.sparse
+
+#######################
+## Analytic Solution ##
+#######################
+
+def advectAnalytic(n,x,u,i,dt):
+    t = i*dt
+    uAnalytic = zeros(n+1)
+
+    for i in range(0,n):
+        if (x[i] < -5+a*t) and (x[i]>-7+a*t):
+            uAnalytic[i] = 1
+
+    u[:,dt] = uAnalytic
+
+    return u
+
+#############################
+## Marches forward in time ##
+#############################
+
+def calcSoln(x,u,j):
+    sigma = a*dt/dx
+
+
+    #Explicit Forward Difference Method
+    if j == 0: 
+        for k in range(0,T):
+            for i in range(1,n):
+                u[i,k+1] = u[i,k]-sigma*(u[i,k]-u[i-1,k])
+
+    #Lax-Wendroff Method
+    if j == 1:
+        for k in range(0,T):
+            for i in range(1,n):
+                u[i,k+1] = u[i,k]-sigma/2*(u[i+1,k]-u[i-1,k])+sigma**2/2*(u[i+1,k]-2*u[i,k]+u[i-1,k])
+        
+    #Implicit Method of Choice
+    if j == 2:
+        #Define A matrix as stencil to act on internal points
+        diag_rows = np.array([sigma/2*ones(n-1),zeros(n-1),-sigma/2*ones(n-1)])
+        positions = [-1, 0,1]
+        A = sp.sparse.spdiags(diag_rows, positions, n-1, n-1).todense()
+        w = u[1:n,0:T+1] #Selecting out only the interal points of u to act on
+
+        #Update U over many time steps
+        for k in range(0,T):
+            w[:,k+1] = solve(eye(n-1)-A,w[:,k])
+        u[1:n,0:T+1] = w[:,0:T+1] #Reincorperate internal points and BCs
+
+    return(u)
+#############
+## Errrors ##
+#############
+def errorCalc(sigma,cfl,j):
+    phi = linspace(0.001,pi,100)
+    if j == 0:
+        G = abs(1-sigma*(1-exp(-1j*phi)))
+        PHI = arctan((sigma*phi)/(1-sigma+sigma*cos(phi)))/(sigma*phi)
+        meth = 'fdcd'
+    elif j == 1:
+        G = abs(1-1j*sigma*sin(phi)+sigma**2*cos(phi)-sigma**2)
+        PHI = arctan((sigma*phi)/(1-sigma**2*(cos(phi)-1)))/(sigma*phi)
+        meth = 'LW'
+    elif j == 2:
+        G = abs(1-sigma*1j*sin(phi))
+        PHI = arctan(sigma*sin(phi))/(sigma*phi)
+        meth = 'Implicit'
+
+    print "error for j = %s"%j
+    figure(10)
+    clf()
+    plot(phi,G)
+    cflNum = int(cfl*10*2)
+    xlabel('Phase')
+    ylabel('Dispersion Error')
+    savefig('diff_error_cfl_%r_%s' %(cflNum,meth))
+
+    figure(11)
+    clf()
+    plot(phi,PHI)
+    xlabel('Phase')
+    ylabel('Dissipation Error')
+    savefig('disp_error_cfl_%r_%s' %(cflNum,meth))              
+                 
+##############
+## Plotting ##
+##############
+
+def plotting(x,u,dt,cfl,i):
+    uAnalytic = advectAnalytic(n,x,u,i,dt)
+    figure(i)
+    clf()
+    plot(x,u[:,i],'b')      #Plot computed solution
+    plot(x,uAnalytic[:,dt],'r--') #Plot analytic solution
+    xlabel('x')
+    ylabel('u(x,t)')
+    legend(('Numerical Solution','Analytic Solution'))
+    axis([-10, 10, -0.3, 1.3])
+    dT = int(dt*10000)
+    if j == 0:
+        savefig('advect_fdcd_%s_dt_%r'%(str(i).zfill(2),dT))
+    elif j == 1:
+        savefig('advect_lw_%s_dt_%r'%(str(i).zfill(2),dT))
+    elif j == 2:
+        savefig('advect_implicit_%s_dt_%r'%(str(i).zfill(2),dT))
+##################
+## Main Program ##
+##################
+
+close ('all')
+
+# One step forward difference in time and centered difference in space
+dx = 0.05
+a = 0.5
+CFL = array([0.6, 1.2])
+DT = CFL*dx/a
+xMin = -10
+xMax = 10
+n = int((xMax-xMin)/dx)
+
+for m in range(0,2):
+    dt = DT[m]
+    T = int(15/dt)
+    cfl = CFL[m]
+
+    print "Computing and plotting solutions for CFL = %s" %cfl
+    for j in range(0,3):
+
+        u = zeros((n+1,T+1))
+        x = linspace(xMin,xMax,n+1)
+        # Set ICs
+        u = advectAnalytic(n,x,u,0,0)
+        # Loop through remaining time steps to compute solution
+        u = calcSoln(x,u,j)
+
+        # Plot desired timestpes
+        plotTimes = [T]
+    
+        for i in range(0,1):
+            plotting(x,u,dt,cfl,plotTimes[i])
+        
+        sigma = a*dt/dx
+        errorCalc(sigma/2,cfl/2,j)    
+
+\end{verbatim}
+
+\end{document}
