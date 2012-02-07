@@ -9,7 +9,6 @@ import scipy as sp
 import scipy.sparse
 rc("text",usetex=True)
 
-
 ##################
 ## Load Airfoil ##
 ##################
@@ -31,10 +30,10 @@ def plotAirfoil(airfoil):
     savefig('NACA0012')
     return
 
-#####################
-## Initialize Mesh ##
-#####################
-def initMesh():
+###################
+## Initialize BC ##
+###################
+def initBC():
     x = zeros((n,m))
     y = zeros((n,m))
     
@@ -47,7 +46,7 @@ def initMesh():
     dTheta = 2*pi/(n-1) #difference in angle between points
     for i in range(0,n):
         x[i,m-1] = r*cos(dTheta*i)
-        y[i,m-1] = r*sin(dTheta*i)
+        y[i,m-1] = -r*sin(dTheta*i)
  
     #Set location of "cut"
     dx = (r - airfoil[m/2,1])/m #spacing from tail to boundary
@@ -66,7 +65,7 @@ def initMesh():
 ################
 def bcPlotter(x,y):
     figure(2)
-    title('Mapping of Computaitonal Domain to Physical Domain')
+    title('Mapping of Computaitonal Domain Boundaries to Physical Domain')
     xlabel('x')
     ylabel('y')
     plot(x[:,0],y[:,0],'r')
@@ -74,9 +73,61 @@ def bcPlotter(x,y):
     plot(x[0,:],y[0,:],'b')
     plot(x[n-1,:],y[n-1,:],'k--')
     legend(('Bottom Boundary','Top Boundary','Left Boundary','Right Boundary'))
-    show()
+    
     return
 
+##################
+## Mesh Plotter ##
+##################
+def initMeshPlotter(x,y):
+    figure(3)
+    title('Mapping of Computaitonal Domain to Physical Domain')
+    xlabel('x')
+    ylabel('y')
+    plot(x[:,:],y[:,:],'b.')
+    plot(x[:,0],y[:,0],'r')
+#    legend(('Transfinite Interpolation','NACA 0012 Airfoil'))
+    savefig('initMesh')
+    axis([-0.5,1.5,-0.5,0.5]) 
+    savefig('initMeshZoom')
+    return
+
+
+#####################
+## Initialize Mesh ##
+#####################
+def initMesh(x,y):
+    Ax = zeros((n,m))
+    Bx = zeros((n,m))
+    Tx = zeros((n,m))
+    Ay = zeros((n,m))
+    By = zeros((n,m))
+    Ty = zeros((n,m))
+    for j in range(1,m):
+        for i in range(1,n):
+            L1j = float(j-m)/(0-m)
+            L2j = float(j-0)/(m-0)
+            L1i = float(i-n)/(0-n)
+            L2i = float(i-0)/(n-0)
+            Ax[i,j] = L1i*x[0,j]+L2i*x[n-1,j]
+            Ay[i,j] = L1i*y[0,j]+L2i*y[n-1,j]
+            Bx[i,j] = L1j*x[i,0]+L2j*x[i,m-1]
+            By[i,j] = L1j*y[i,0]+L2j*y[i,m-1]
+            Tx[i,j] = L1i*L1j*x[0,0]+L2i*L2j*x[n-1,m-1]+L1i*L2j*x[0,m-1]+L2i*L1j*x[n-1,0]
+            Ty[i,j] = L1i*L1j*y[0,0]+L2i*L2j*y[n-1,m-1]+L1i*L2j*y[0,m-1]+L2i*L1j*y[n-1,0]
+
+    Fx = Ax+Bx-Tx
+    Fy = Ay+By-Ty
+    #Insert Precomputed BCs
+    Fx[:,0] = x[:,0]
+    Fy[:,0] = y[:,0]
+    Fx[:,m-1] = x[:,m-1]
+    Fy[:,m-1] = y[:,m-1]
+    Fx[0,:] = x[0,:]
+    Fy[0,:] = y[0,:]
+    Fx[n-1,:] = x[n-1,:]
+    Fy[n-1,:] = y[n-1,:]
+    return (Fx,Fy)
 ##################
 ## Main Program ##
 ##################
@@ -86,11 +137,11 @@ n = 129
 m = 65
 r = 10 #(10 cord lengths) x (cord lenght = 1) 
 airfoil = loadAirfoil()
-x,y = initMesh()
-bcPlotter(x,y)
-plotAirfoil(airfoil)
+x,y = initBC()
+#bcPlotter(x,y)
+#plotAirfoil(airfoil)
 
+x,y = initMesh(x,y)
+initMeshPlotter(x,y)
 
-
-
-
+show()
