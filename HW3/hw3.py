@@ -15,6 +15,8 @@ rc("text",usetex=True)
 def loadAirfoil():
     fname = 'body.dat'
     airfoilData = loadtxt(fname)
+    airfoilData[:,1] = airfoilData[:,1]-0.5
+
     return airfoilData
 
 ##################
@@ -38,23 +40,27 @@ def initBC():
     y = zeros((n,m))
     
     #Read in points of airfoil as lower boundary
-    for i in range(0,n):
-        x[i,0] = airfoil[i,1]
-        y[i,0] = airfoil[i,2]
+#    for i in range(0,n):
+#        x[i,0] = airfoil[i,1]
+#        y[i,0] = airfoil[i,2]
+    x[:,0] = airfoil[:,1]
+    y[:,0] = airfoil[:,2]
 
     #Set outer BC to circle with a radius of 10 cord lenths
     dTheta = 2*pi/(n-1) #difference in angle between points
-    for i in range(0,n):
+    for i in range(0,n-1):
         x[i,m-1] = r*cos(dTheta*i)
         y[i,m-1] = -r*sin(dTheta*i)
  
     #Set location of "cut"
-    dx = (r - airfoil[m/2,1])/m #spacing from tail to boundary
-    dx = 9./m
-    for j in range(1,m-1):
-        x[0,j] = 1+dx*j
+#    dx = (r - airfoil[0,1])/m #spacing from tail to boundary
+
+    tip = airfoil[0,1]
+    dx = float(r-tip)/(m-1)
+    for j in range(1,m):
+        x[0,j] = tip+dx*j
         y[0,j] = 0
-        x[n-1,j] = 1+dx*j
+        x[n-1,j] = tip+dx*j
         y[n-1,j] = 0
 
     return (x,y)
@@ -65,7 +71,7 @@ def initBC():
 ################
 def bcPlotter(x,y):
     figure(2)
-    title('Mapping of Computaitonal Domain Boundaries to Physical Domain')
+    title('Mapping of Boundaries to Physical Domain')
     xlabel('x')
     ylabel('y')
     plot(x[:,0],y[:,0],'r')
@@ -85,11 +91,13 @@ def initMeshPlotter(x,y):
     xlabel('x')
     ylabel('y')
     plot(x[:,:],y[:,:],'b.')
-    plot(x[:,0],y[:,0],'r')
+    plot(x[:,0],y[:,0],'r.')
+    plot(x[0,0],y[0,0],'g.')
+    axis([-10.5,10.5,-10.5,10.5]) 
 #    legend(('Transfinite Interpolation','NACA 0012 Airfoil'))
     savefig('initMesh')
-    axis([-0.5,1.5,-0.5,0.5]) 
-    savefig('initMeshZoom')
+#    axis([-0.5,1.5,-0.5,0.5]) 
+#    savefig('initMeshZoom')
     return
 
 ##################
@@ -116,8 +124,6 @@ def resPlotter(res):
     plot(res)
     savefig('resPlot')
     return
-
-
 #####################
 ## Initialize Mesh ##
 #####################
@@ -130,20 +136,30 @@ def initMesh(x,y):
     Ty = zeros((n,m))
     for j in range(1,m):
         for i in range(1,n):
-            L1j = float(j-m)/(0-m)
-            L2j = float(j-0)/(m-0)
-            L1i = float(i-n)/(0-n)
-            L2i = float(i-0)/(n-0)
-           
+
+#            L1j = float(j-m)/(0-m)
+#            L2j = float(j-0)/(m-0)
+#            L1i = float(i-n)/(0-n)
+#            L2i = float(i-0)/(n-0)
+
+
+            L1j = float(j-(m-1))/(0-(m-1))
+            L2j = float(j-0)/((m-1)-0)
+            L1i = float(i-(n-1))/(0-(n-1))
+            L2i = float(i-0)/((n-1)-0)
+
+
             Ax[i,j] = L1i*x[0,j]+L2i*x[n-1,j]
             Ay[i,j] = L1i*y[0,j]+L2i*y[n-1,j]
             Bx[i,j] = L1j*x[i,0]+L2j*x[i,m-1]
             By[i,j] = L1j*y[i,0]+L2j*y[i,m-1]
-            Tx[i,j] = L1i*L1j*x[0,0]+L2i*L2j*x[n-1,m-1]+L1i*L2j*x[0,m-1]+L2i*L1i*x[n-1,0]
-            Ty[i,j] = L1i*L1j*y[0,0]+L2i*L2j*y[n-1,m-1]+L1i*L2j*y[0,m-1]+L2i*L1i*y[n-1,0]
+            Tx[i,j] = L1i*L1j*x[0,0]+L2i*L2j*x[n-1,m-1]+L1i*L2j*x[0,m-1]+L2i*L1j*x[n-1,0]
+            Ty[i,j] = L1i*L1j*y[0,0]+L2i*L2j*y[n-1,m-1]+L1i*L2j*y[0,m-1]+L2i*L1j*y[n-1,0]
 
     Fx = Ax+Bx-Tx
     Fy = Ay+By-Ty
+
+
     #Insert Precomputed BCs
     Fx[:,0] = x[:,0]
     Fy[:,0] = y[:,0]
@@ -153,6 +169,7 @@ def initMesh(x,y):
     Fy[0,:] = y[0,:]
     Fx[n-1,:] = x[n-1,:]
     Fy[n-1,:] = y[n-1,:]
+
     return (Fx,Fy)
 
 ################################
@@ -181,24 +198,37 @@ def SOR(Rmin,omega,x,y):
                 #SOR step
                 x[i,j] = 1./(2*(alpha+gamma))*(alpha*(x[i-1,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
                 y[i,j] = 1./(2*(alpha+gamma))*(alpha*(y[i-1,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
-
+                                
                 #Relaxation step
                 x[i,j] = omega*x[i,j]+(1-omega)*xold[i,j]
                 y[i,j] = omega*y[i,j]+(1-omega)*yold[i,j]
+                
+
+
+
+        for j in range(1,m-1):
+            for i in range(1,n-1):
+                
+                alpha = 0.25*((x[i,j+1]-x[i,j-1])**2+(y[i,j+1]-y[i,j-1])**2)
+                beta =  0.25*((x[i+1,j]-x[i-1,j])*(x[i,j+1]-x[i,j-1])+(y[i+1,j]-y[i-1,j])*(y[i,j+1]-y[i,j-1]))
+                gamma = 0.25*((x[i+1,j]-x[i-1,j])**2+(y[i+1,j]-y[i-1,j])**2)
+                delta = 1./16*((x[i+1,j]-x[i-1,j])*(y[i,j+1]-y[i,j-1])-(x[i,j+1]-x[i,j-1])*(y[i+1,j]-y[i-1,j]))**2
 
                 #Compute residual
-                #Rx = (alpha*(x[i-1,j]-2*x[i,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]-2*x[i,j]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
-                #Ry = (alpha*(y[i-1,j]-2*y[i,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]-2*y[i,j]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
+                Rx = (alpha*(x[i-1,j]-2*xold[i,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]-2*xold[i,j]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
+                Ry = (alpha*(y[i-1,j]-2*yold[i,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]-2*yold[i,j]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
 
-                Rx = x[i,j] - 2*(alpha+gamma)*xold[i,j]
-                Ry = y[i,j] - 2*(alpha+gamma)*yold[i,j]
+#                Rx = x[i,j] - 2*(alpha+gamma)*x[i,j]
+#                Ry = y[i,j] - 2*(alpha+gamma)*y[i,j]
+
 
                 R = (abs(Rx)+abs(Ry))/2+R
             
         R = R/((n-1)*(m-1))
         res.append(R)
+
         print len(res),R
-        if len(res)>5000:
+        if len(res)>1300:
             break
 
 #    print Rx, Ry
@@ -216,7 +246,7 @@ n = 129
 m = 65
 r = 10 #(10 cord lengths) x (cord lenght = 1) 
 Rmin = 10**(-6)
-omega = 0.5
+omega = 1.5
 airfoil = loadAirfoil()
 x,y = initBC()
 #bcPlotter(x,y)
@@ -226,7 +256,7 @@ x,y = initMesh(x,y)
 initMeshPlotter(x,y)
 xold = x
 yold = y
-#x,y,res = SOR(Rmin,omega,x,y)
-#meshPlotter(x,y)
-#resPlotter(res)
+x,y,res = SOR(Rmin,omega,x,y)
+meshPlotter(x,y)
+resPlotter(res)
 show()
