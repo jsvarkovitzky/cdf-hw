@@ -196,9 +196,13 @@ def SOR(Rmin,omega,xsmall,ysmall):
     x[1:nn-1,:] = xsmall
     y[1:nn-1,:] = ysmall
 
-
     while R>=Rmin:
-        R = 0
+        #Ensure that runs do not go on too long...
+        if len(res)>1500:
+            break
+
+        R = 0 #Initialize residual as zero
+
         #assign ghost values for x positions based on periodic BCs
         x[0,:] = x[-3,:]
         x[-1,:] = x[2,:]
@@ -209,18 +213,9 @@ def SOR(Rmin,omega,xsmall,ysmall):
         y[-1,:] = y[2,:]
         y[1,:] = y[-2,:]       
         
-
-#        if len(res)>0:
-        #    if sum(sum(x-xold)):
-        #        print "Fuck..."
-#            print sum(sum(x-xold))
         xold[:,:] = x[:,:]
         yold[:,:] = y[:,:]
         
-        if len(res)>20:
-            break
-
-
         for j in range(1,mm-1):
             for i in range(1,nn-1):
                 #Create xold & yold to store values from last timestep
@@ -234,8 +229,8 @@ def SOR(Rmin,omega,xsmall,ysmall):
                 delta = 1./16*((x[i+1,j]-x[i-1,j])*(y[i,j+1]-y[i,j-1])-(x[i,j+1]-x[i,j-1])*(y[i+1,j]-y[i-1,j]))**2
                 
                 #Define clustering values
-                b = 1000
-                d = 2
+                b = 7000
+                d = 5
                 i_cluster = 10
                 j_cluster = 40
                 P = -b*sign(i-i_cluster)*exp(-d*sqrt((i-i_cluster)**2+(j-j_cluster)**2)) 
