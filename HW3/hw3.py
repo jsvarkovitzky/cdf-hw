@@ -187,6 +187,31 @@ def SOR(Rmin,omega,xsmall,ysmall):
     res = [] #array of residuals
     R = Rmin*2
     
+    #creating larger index for ghost cells
+    nn = shape(xsmall)[0]+2
+    mm = shape(xsmall)[1]
+    
+    #defining new grids that have room for ghost cells
+    x = zeros((nn,mm))
+    y = zeros((nn,mm))
+
+    #assigning values for the interior points
+    x[1:n+1,:] = xsmall
+    y[1:n+1,:] = ysmall
+    
+    #assign ghost values for x positions based on periodic BCs
+    x[0,:] = x[-2,:]
+    x[-1,:] = x[1,:]
+
+    #assign ghost values for x positions based on periodic BCs
+    #note that values negated to prevent grid crossing about cut
+    y[0,:] = -y[-2,:]
+    y[-1,:] = -y[1,:]
+
+    
+    
+    print shape(x)
+
     xold = x
     yold = y
 
@@ -194,7 +219,7 @@ def SOR(Rmin,omega,xsmall,ysmall):
         R = 0
        
         for j in range(1,m-1):
-            for i in range(1,n-1):
+            for i in range(2,n):
                 #Create xold & yold to store values from last timestep
                 xold[i,j] = x[i,j]
                 yold[i,j] = y[i,j]
@@ -219,7 +244,7 @@ def SOR(Rmin,omega,xsmall,ysmall):
                 
         #Compute Residual 
         for j in range(1,m-1):
-            for i in range(1,n-1):
+            for i in range(2,n+1):
                 
                 alpha = 0.25*((x[i,j+1]-x[i,j-1])**2+(y[i,j+1]-y[i,j-1])**2)
                 beta =  0.25*((x[i+1,j]-x[i-1,j])*(x[i,j+1]-x[i,j-1])+(y[i+1,j]-y[i-1,j])*(y[i,j+1]-y[i,j-1]))
@@ -240,7 +265,7 @@ def SOR(Rmin,omega,xsmall,ysmall):
         res.append(R)
 
         print len(res),R
-        if len(res)>100:
+        if len(res)>1500:
             break
 
 #    print Rx, Ry
