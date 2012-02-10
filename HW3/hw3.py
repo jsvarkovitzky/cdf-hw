@@ -8,7 +8,8 @@ from pylab import *
 import scipy as sp
 import scipy.sparse
 rc("text",usetex=True)
-
+from mpl_toolkits.mplot3d import axes3d
+from matplotlib.pyplot import *
 ##################
 ## Load Airfoil ##
 ##################
@@ -118,10 +119,17 @@ def meshPlotter(x,y):
 ######################
 def resPlotter(res):
     figure(5)
-    title('residual')
+    title('Residuals')
     xlabel('n')
     ylabel('Residual')
     plot(res)
+    savefig('resPlot')
+    
+    figure(6)
+    title('Log Plot of Residuals')
+    xlabel('n')
+    ylabel('Log(Residual)')
+    semilogy(res)
     savefig('resPlot')
     return
 #####################
@@ -175,26 +183,32 @@ def initMesh(x,y):
 ################################
 ## Successive Over Relaxation ##
 ################################
-def SOR(Rmin,omega,x,y):
+def SOR(Rmin,omega,xsmall,ysmall):
     res = [] #array of residuals
     R = Rmin*2
+    
+    xold = x
+    yold = y
+
     while R>=Rmin:
         R = 0
        
         for j in range(1,m-1):
             for i in range(1,n-1):
-             
-                
+                #Create xold & yold to store values from last timestep
                 xold[i,j] = x[i,j]
                 yold[i,j] = y[i,j]
-   
+                
+                #Define constants required for use later
                 alpha = 0.25*((x[i,j+1]-x[i,j-1])**2+(y[i,j+1]-y[i,j-1])**2)
                 beta =  0.25*((x[i+1,j]-x[i-1,j])*(x[i,j+1]-x[i,j-1])+(y[i+1,j]-y[i-1,j])*(y[i,j+1]-y[i,j-1]))
                 gamma = 0.25*((x[i+1,j]-x[i-1,j])**2+(y[i+1,j]-y[i-1,j])**2)
                 delta = 1./16*((x[i+1,j]-x[i-1,j])*(y[i,j+1]-y[i,j-1])-(x[i,j+1]-x[i,j-1])*(y[i+1,j]-y[i-1,j]))**2
-
+                
+                #Define clustering values
                 P = 0
                 Q = 0
+                
                 #SOR step
                 x[i,j] = 1./(2*(alpha+gamma))*(alpha*(x[i-1,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
                 y[i,j] = 1./(2*(alpha+gamma))*(alpha*(y[i-1,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
@@ -203,9 +217,7 @@ def SOR(Rmin,omega,x,y):
                 x[i,j] = omega*x[i,j]+(1-omega)*xold[i,j]
                 y[i,j] = omega*y[i,j]+(1-omega)*yold[i,j]
                 
-
-
-
+        #Compute Residual 
         for j in range(1,m-1):
             for i in range(1,n-1):
                 
@@ -215,26 +227,43 @@ def SOR(Rmin,omega,x,y):
                 delta = 1./16*((x[i+1,j]-x[i-1,j])*(y[i,j+1]-y[i,j-1])-(x[i,j+1]-x[i,j-1])*(y[i+1,j]-y[i-1,j]))**2
 
                 #Compute residual
-                Rx = (alpha*(x[i-1,j]-2*xold[i,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]-2*xold[i,j]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
-                Ry = (alpha*(y[i-1,j]-2*yold[i,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]-2*yold[i,j]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
+                Rx = (alpha*(x[i-1,j]-2*x[i,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]-2*x[i,j]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
+                Ry = (alpha*(y[i-1,j]-2*y[i,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]-2*y[i,j]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
 
-#                Rx = x[i,j] - 2*(alpha+gamma)*x[i,j]
-#                Ry = y[i,j] - 2*(alpha+gamma)*y[i,j]
+                #Rx = x[i,j] - 2*(alpha+gamma)*x[i,j]
+                #Ry = y[i,j] - 2*(alpha+gamma)*y[i,j]
 
 
                 R = (abs(Rx)+abs(Ry))/2+R
             
-        R = R/((n-1)*(m-1))
+        R = R/((n)*(m))
         res.append(R)
 
         print len(res),R
-        if len(res)>1300:
+        if len(res)>100:
             break
 
 #    print Rx, Ry
+
     return (x,y,res)
 
+##################
+## Mesh Plotter ##
+##################
+def meshPlotter(x,y):
+    figure(7)
+    for i in range(0,n):
+        plot(x[i,:],y[i,:],'b')
 
+    for j in range(0,m):
+        plot(x[:,j],y[:,j],'b')
+
+    xlabel('x')
+    ylabel('y')
+    title('Plot with mesh lines')
+    savefig('meshLines')
+        
+    return
 
 
 ##################
@@ -246,7 +275,7 @@ n = 129
 m = 65
 r = 10 #(10 cord lengths) x (cord lenght = 1) 
 Rmin = 10**(-6)
-omega = 1.5
+omega = 1.9
 airfoil = loadAirfoil()
 x,y = initBC()
 #bcPlotter(x,y)
@@ -254,8 +283,6 @@ x,y = initBC()
 
 x,y = initMesh(x,y)
 initMeshPlotter(x,y)
-xold = x
-yold = y
 x,y,res = SOR(Rmin,omega,x,y)
 meshPlotter(x,y)
 resPlotter(res)
