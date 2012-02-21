@@ -15,11 +15,11 @@ from pylab import *
 
 #using method a for now
 def uPredict(u,f):
-    uBar[:,1:n-2] = u[:,1:n-2] - tau*(f[:,2:n-1]-f[:,1:n-2])
+    uBar[:,1:n-1] = u[:,1:n-1] - tau*(f[:,2:n]-f[:,1:n-1])
     uBar[:,0] = u[:,0]
     uBar[:,n-1] = u[:,n-1]
-    print "uBar:"
-    print uBar
+#    print "uBar:"
+#    print uBar
 
     return uBar
 
@@ -37,8 +37,9 @@ def uCorrect(u,uBar,fBar):
 ##########################
 
 def fFunc(u,f):
-    
-    p = (u[2,:]-u[1,:]**2/2)*(gamma-1)/u[0,:]
+
+    p = zeros(shape(u)[1])
+    p[:] = (u[2,:]-u[1,:]**2/2)*(gamma-1)/u[0,:]
     f[0,:] = u[1,:]
     f[1,:] = u[1,:]**2/u[0,:] + p[:]
     f[2,:] = u[1,:]*(gamma/(gamma-1)*p[:]/u[0,:]+(u[1,:]/u[0,:])**2/2)
@@ -71,7 +72,7 @@ rhol = 8.
 rhor = 1.
 
 dx = x[1]-x[0]
-dt = dx/4  ###Can set this to omptimize stability later###
+dt = dx/4/1000  ###Can set this to omptimize stability later###
 tau = (dt/dx)
 #Initialize the vectors for storing data
 #Note a history is not needed for the assignment and therefore is not kept
@@ -92,9 +93,17 @@ f = fFunc(u,f)
 
 for k in range(0,10):
 
+    print k
     #calculate uBar
     uBar = uPredict(u,f)
-    fBar = fFunc(uBar,f)
+    fBar = fFunc(uBar,fBar)
     u = uCorrect(u,uBar,fBar)
     f = fFunc(u,f)
+    
 
+
+figure(1)
+plot(u[0,:],'b')
+plot(u[1,:],'g')
+plot(u[2,:]/10**7,'r')
+show()
