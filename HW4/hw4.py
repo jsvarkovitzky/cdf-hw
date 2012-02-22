@@ -15,13 +15,11 @@ from pylab import *
 
 #using method a for now
 def uPredict(u,f):
-    uBar[:,1:n-1] = u[:,1:n-1] - tau*(f[:,2:n]-f[:,1:n-1])
-    uBar[:,0] = u[:,0]
-    uBar[:,n-1] = u[:,n-1]
-#    print "uBar:"
-#    print uBar
-
-    return uBar
+    uPred = zeros((3,n))
+    uPred[:,1:n-1] = u[:,1:n-1] - tau*(f[:,2:n]-f[:,1:n-1])
+    uPred[:,0] = u[:,0]
+    uPred[:,n-1] = u[:,n-1]
+    return uPred
 
 ####################
 ## Corrector Step ##
@@ -29,8 +27,12 @@ def uPredict(u,f):
 
 #using method a for now
 def uCorrect(u,uBar,fBar):
-    uBar[:,1:n-1] = 1./2*(u[:,1:n-1] + uBar[:,1:n-1]) - tau/2*(fBar[:,1:n-1]-fBar[:,0:n-2])
-    return uBar
+    uCor = zeros((3,n))
+    uCor[:,1:n-1] = 1./2*(u[:,1:n-1] + uBar[:,1:n-1]) - tau/2*(fBar[:,1:n-1]-fBar[:,0:n-2])
+    uCor[:,0] = u[:,0]
+    uCor[:,n-1] = u[:,n-1]
+
+    return uCor
 
 ##########################
 ## Compute the F vector ##
@@ -39,11 +41,61 @@ def uCorrect(u,uBar,fBar):
 def fFunc(u,f):
 
     p = zeros(shape(u)[1])
-    p[:] = (u[2,:]-u[1,:]**2/2)*(gamma-1)/u[0,:]
+#    p[:] = (u[2,:]-u[1,:]**2/2)*(gamma-1)/u[0,:]
+#    p[:] = u[0,:]*(gamma-1)/gamma*(u[2,:]/u[1,:]-(u[1,:]/u[0,:])**2/2)
+    p[:] = (gamma-1)*(u[2,:]-u[1,:]**2/u[0,:]/2) #Lecture 12 pg 23
     f[0,:] = u[1,:]
     f[1,:] = u[1,:]**2/u[0,:] + p[:]
-    f[2,:] = u[1,:]*(gamma/(gamma-1)*p[:]/u[0,:]+(u[1,:]/u[0,:])**2/2)
+#    f[2,:] = u[1,:]*(gamma/(gamma-1)*p[:]/u[0,:]+(u[1,:]/u[0,:])**2/2)
+#    f[2,:] = (u[2,:]+p[:])*u[1,:]/u[0,:]
+#    f[2,:] = u[1,:]*u[2,:]/u[0,:] + p[:]/u[0,:]
+    f[2,:] = u[1,:]/u[0,:]*(u[2,:]+p[:])
     return f
+
+######################
+## Newton Iteration ##
+######################
+def pNewton():
+    R = 1
+    P = 1 #Initial guess for P, keep small
+    ul = 0
+    ur = 0
+    lim = 10**(-6)
+    g = gamma
+    a = alpha
+    while R > lim:
+        Pold = P
+#        fp = sqrt(2/(g*(g-1)))*(P-1)/((1+a*P)**(1/2))-1/(g-1)*cl/cr*(1-(pr/pl*P)**((g-1)/(2*g)))+(ul-ur)/cr
+#        fpPrime = sqrt(2/(gamma*(gamma-1)))*(1/(1+alpha*P)**(1/2)-(alpha*(P-1))/(1+alpha*P)**(3/2))+cl*pr/(cr*pl)/gamma*(pr/pl*P)**((gamma-1)/(2*gamma)-1)
+        fp = (2/(g*(g-1)))**(1/2)*(P-1)/((1+a*P)**(1/2))-2/(g-1)*cl/cr*(1-(pr/pl*P)**((g-1)/(2*g)))-(ul-ur)/cr
+        fpPrime = (2/(g*(g-1)))**(1/2)*(1/((1+a*P)**(1/2))-(a*(P-1))/(2*(1+a*P)**(3/2)))+cl/cr*pr/pl*1/g*(pr/pl*P)**((g-1)/(2*g)-1)
+        P = P - fp/fpPrime
+        R = abs(P-Pold)
+#        print R
+
+    return P
+
+########################
+## Ananlytic Solution ##
+######################## 
+def analyticSoln():
+    P = pNewton()
+    #Region 2
+    p2 = P*pr
+    u2 = (P-1)/(1+alpha*P)^(1/2)
+    c2 = (P-1)*cr/(gamma*(u2-ur))+ur
+    return
+################
+## Status Bar ##
+################                                                                
+
+def status(n,N):
+    n = float(n)
+    N = float(N)
+    percent = n/N*100
+    sys.stdout.write("[==> ]%3d%%\r" %percent)
+    sys.stdout.flush()
+
 
 ##################
 ## Main Program ##
@@ -66,10 +118,14 @@ xmax = 0.5
 x = linspace(xmin,xmax,n)
 
 #I.C.s
-pl = 10.0*10**5
-pr = 1.0*10**5
+pl = 1.*10**6
+pr = 1.*10**5
 rhol = 8.
 rhor = 1.
+
+alpha = (gamma+1)/(gamma-1)
+cl = sqrt(gamma*pl/rhol)
+cr = sqrt(gamma*pr/rhor)
 
 dx = x[1]-x[0]
 dt = dx/4/1000  ###Can set this to omptimize stability later###
@@ -91,19 +147,32 @@ u[2,:] = where(x<0,1/(gamma-1)*u[0,:]*pl+u[1,:]**2/2,1/(gamma-1)*u[0,:]*pr+u[1,:
 
 f = fFunc(u,f)
 
-for k in range(0,10):
 
-    print k
+figure(1)
+title('Before')
+plot(u[0,:],'b')
+plot(u[1,:],'g')
+plot(u[2,:]/10**7,'r')
+show()
+
+
+
+N = 2
+for k in range(0,N):
+
+    status(k,N)
     #calculate uBar
     uBar = uPredict(u,f)
     fBar = fFunc(uBar,fBar)
     u = uCorrect(u,uBar,fBar)
     f = fFunc(u,f)
-    
 
-
-figure(1)
+figure(2)
+title('After')
 plot(u[0,:],'b')
 plot(u[1,:],'g')
 plot(u[2,:]/10**7,'r')
 show()
+
+P = pNewton()
+print "p = %s" %P
