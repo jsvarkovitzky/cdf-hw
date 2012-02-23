@@ -28,10 +28,9 @@ def uPredict(u,f):
 #using method a for now
 def uCorrect(u,uBar,fBar):
     uCor = zeros((3,n))
-    uCor[:,1:n-1] = 1./2*(u[:,1:n-1] + uBar[:,1:n-1]) - tau/2*(fBar[:,1:n-1]-fBar[:,0:n-2])
+    uCor[:,1:n-1] = 1./2.*(u[:,1:n-1] + uBar[:,1:n-1]) - tau/2.*(fBar[:,1:n-1]-fBar[:,0:n-2])
     uCor[:,0] = u[:,0]
     uCor[:,n-1] = u[:,n-1]
-
     return uCor
 
 ##########################
@@ -41,8 +40,6 @@ def uCorrect(u,uBar,fBar):
 def fFunc(u,f):
 
     p = zeros(shape(u)[1])
-#    p[:] = (u[2,:]-u[1,:]**2/2)*(gamma-1)/u[0,:]
-#    p[:] = u[0,:]*(gamma-1)/gamma*(u[2,:]/u[1,:]-(u[1,:]/u[0,:])**2/2)
     p[:] = (gamma-1)*(u[2,:]-u[1,:]**2/u[0,:]/2) #Lecture 12 pg 23
     f[0,:] = u[1,:]
     f[1,:] = u[1,:]**2/u[0,:] + p[:]
@@ -120,8 +117,8 @@ x = linspace(xmin,xmax,n)
 #I.C.s
 pl = 1.*10**6
 pr = 1.*10**5
-rhol = 8.
-rhor = 1.
+rhol = 1.0
+rhor = 0.125
 
 alpha = (gamma+1)/(gamma-1)
 cl = sqrt(gamma*pl/rhol)
@@ -157,7 +154,7 @@ show()
 
 
 
-N = 2
+N = 30
 for k in range(0,N):
 
     status(k,N)
