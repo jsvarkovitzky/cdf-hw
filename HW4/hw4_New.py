@@ -34,24 +34,48 @@ def icPlotter(u,x):
 ## u Plotter ##
 ###############
 def uPlotter(u,x):
-    figure(4)
-    title('rho')
-    plot(x,u[0,:],'b')
+    ts = 6.7479*10**(-4)
+
+    (uE,pE,rhoE,HE,CE,ME) = computeAnalytic(ts)
+
+    figure(1)
+    title('Density')
+    plot(x,u[0,:],'b.')
+    plot(x,rhoE[:],'r')
     xlabel('x')
     ylabel('rho')
-    
-    figure(5)
-    title('rho*u')
-    plot(x,u[1,:],'b')
+    legend(('Numerical','Analytic'))
+    savefig('density.png')
+
+    figure(2)
+    title('Velocity')
+    plot(x,u[1,:]/u[0,:]/sqrt(pl/rhol),'b.')
+    plot(x,uE[:],'r')
     xlabel('x')
-    ylabel('rho*u')
-    
-    figure(6)
-    title('rho*E')
-    plot(x,u[2,:],'b')
+    ylabel('u')
+    legend(('Numerical','Analytic'))
+    savefig('velocity.png')
+
+    figure(3)
+    title('Pressure')
+    plot(x,(g-1)*(u[2,:]-(u[1,:]**2/u[0,:])/2)/pl,'b.')
+    plot(x,pE,'r')
     xlabel('x')
-    ylabel('rho*E')
+    ylabel('p')
+    legend(('Numerical','Analytic'))
+    savefig('pressure.png')
     
+    figure(4)
+    title('Mach Number')
+    p[:] = (g-1)*(u[2,:]-(u[1,:]**2/u[0,:])/2)
+    plot(x,(u[1,:]/u[0,:])/sqrt(g*p[:]/u[0,:]),'b.')
+    plot(x,ME,'r')
+    xlabel('x')
+    ylabel('p')
+    legend(('Numerical','Analytic'))
+    savefig('MachNum.png')
+    
+
     show()
     
     return
@@ -118,21 +142,15 @@ def computeAnalytic(ts):
     H = zeros(n)
     M = zeros(n)
 
-    #region 5 (note no region 4)
-    u[:] = 2/(g+1)*(x[:]/ts+cl+(g-1)/2*ul)
-    C[:] = u[:]-x[:]/ts
-    p[:] = pl*(C[:]/cl)**(2*g/(g-1))
-    rho[:] = rhol*(p[:]/pl)**(1/g)
-    M[:] = u[:]/C[:]
-    H[:] = g/(g-1)*p[:]/rho[:]+u[:]**2/2
 
     #region 2
     p2 = P*pr
     u2 = (P-1)/sqrt(1+a*P)*cr/sqrt(g*(g-1)/2)
     rho2 = (1+a*P)/(a+P)*rhor
-    C2 = (P-1)*cr/(g*(u2-ur))+ur
+    C2 = sqrt(g*p2/rho2)#(P-1)*cr/(g*(u2-ur))+ur
     H2 = g/(g-1)*p2/rho2+u2**2/2
     M2 = u2/C2
+    CS = (P-1)*cr**2/(g*(u2-ur))+ur
 
     #region 3
     p3 = p2  
@@ -142,25 +160,7 @@ def computeAnalytic(ts):
     H3 = g/(g-1)*p3/rho3+u3**2/2
     M3 = u3/C3
     v = u2
-   
-    #fill values into vectors of region 3
-    u[:] = where(x>v*ts,u3,u)
-    p[:] = where(x>v*ts,p3,p)
-    rho[:] = where(x>v*ts,rho3,rho)
-    H[:] = where(x>v*ts,H3,H)
-    C[:] = where(x>v*ts,C3,C)
-    M[:] = where(x>v*ts,M3,M)
-    
-    #fill values into vectors of region 2
-    CS = (P-1)*cr**2/(g*(u2-ur))+ur
 
-    u[:] = where(x>CS*ts,u2,u)
-    p[:] = where(x>CS*ts,p2,p)
-    rho[:] = where(x>CS*ts,rho2,rho)
-    H[:] = where(x>CS*ts,H2,H)
-    C[:] = where(x>CS*ts,C2,C)
-    M[:] = where(x>CS*ts,M2,M)
-    
     #fill in values in left region
     left_lim = -ts*((g-1)/2*ul+cl)
     u[:] = where(x<left_lim,ul,u)
@@ -171,13 +171,51 @@ def computeAnalytic(ts):
     H[:] = where(x<left_lim,Hl,H)
     C[:] = where(x<left_lim,cl,C)
     M[:] = where(x<left_lim,Ml,M)
+
+    #region 5 (note no region 4)
+    u[:] = where(x>left_lim,2/(g+1)*(x[:]/ts+cl+(g-1)/2*ul),u)
+    C[:] = where(x>left_lim,u[:]-x[:]/ts,C)
+    p[:] = where(x>left_lim,pl*(C[:]/cl)**(2*g/(g-1)),p)
+    rho[:] = where(x>left_lim,rhol*(p[:]/pl)**(1/g),rho)
+    M[:] = where(x>left_lim,u[:]/C[:],M)
+    H[:] = where(x>left_lim,g/(g-1)*p[:]/rho[:]+u[:]**2/2,H)
     
-    figure(17)
-    plot(x,rho)
 
-    print CS*ts, v*ts
+    #fill values into vectors of region 3
+    reg3_lim = ts*((g+1)/2*v-cl-(g-1)/2*ul)
+    u[:] = where(x>reg3_lim,u3,u)
+    p[:] = where(x>reg3_lim,p3,p)
+    rho[:] = where(x>reg3_lim,rho3,rho)
+    H[:] = where(x>reg3_lim,H3,H)
+    C[:] = where(x>reg3_lim,C3,C)
+    M[:] = where(x>reg3_lim,M3,M)
+    
+    #fill values into vectors of region 2
+    u[:] = where(x>v*ts,u2,u)
+    p[:] = where(x>v*ts,p2,p)
+    rho[:] = where(x>v*ts,rho2,rho)
+    H[:] = where(x>v*ts,H2,H)
+    C[:] = where(x>v*ts,C2,C)
+    M[:] = where(x>v*ts,M2,M)
 
-    return
+
+    #fill in values in right region
+
+    u[:] = where(x>CS*ts,ur,u)
+    p[:] = where(x>CS*ts,pr,p)
+    rho[:] = where(x>CS*ts,rhor,rho)
+    Hr = g/(g-1)*pr/rhor+ur**2/2
+    Mr = ur/cr               
+    H[:] = where(x>CS*ts,Hr,H)
+    C[:] = where(x>CS*ts,cr,C)
+    M[:] = where(x>CS*ts,Mr,M)
+
+    #Normalization Step
+    p[:] = p[:]/pl
+    rho[:] = rho[:]/rhol
+    u[:] = u[:]/sqrt(pl/rhol)
+    H[:] = H[:]/(pl/rhol)
+    return(u,p,rho,H,C,M)
 
 ##################
 ## Main Program ##
@@ -194,6 +232,8 @@ x = linspace(xmin,xmax,n)
 dx = x[1]-x[0]
 #dt = dx/40000
 #tau = dt/dx
+
+P = 3.0312995
 
 #I.C.s
 pl = 1.*10**5
@@ -241,10 +281,10 @@ for i in range(0,N):
     u = uUpdate(u,uBar,uBarBar)
 
 
-#uPlotter(u,x)    
+uPlotter(u,x)    
 
 #P = pNewton()
-P = 3.0312995
-ts = 6.7479*10**(-4)
-computeAnalytic(ts)
+
+
+
 
