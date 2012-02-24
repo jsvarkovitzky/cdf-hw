@@ -75,6 +75,25 @@ def uPlotter(u,x):
     legend(('Numerical','Analytic'))
     savefig('MachNum.png')
     
+    figure(5)
+    title('Total Enthalpy')
+    p[:] = (g-1)*(u[2,:]-(u[1,:]**2/u[0,:])/2)
+    plot(x,(u[2,:]+p[:])/(10**5*u[0,:]),'b.')
+    plot(x,HE,'r')
+    xlabel('x')
+    ylabel('p')
+    legend(('Numerical','Analytic'))
+    savefig('totalEnthalpy.png')
+
+    figure(6)
+    title('Entropy')
+    p[:] = (g-1)*(u[2,:]-(u[1,:]**2/u[0,:])/2)
+    plot(x,p[:]/u[0,:]**g/10**5,'b.')
+    plot(x,pE/(rhoE**g),'r')
+    xlabel('x')
+    ylabel('p')
+    legend(('Numerical','Analytic'))
+    savefig('entropy.png')
 
     show()
     
