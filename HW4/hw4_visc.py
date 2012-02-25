@@ -45,7 +45,7 @@ def uPlotter(u,x):
     xlabel('x')
     ylabel('rho')
     legend(('Numerical','Analytic'))
-    savefig('density.png')
+    savefig('density_vsic.png')
 
     figure(2)
     title('Velocity')
@@ -53,8 +53,8 @@ def uPlotter(u,x):
     plot(x,uE[:],'r')
     xlabel('x')
     ylabel('u')
-    legend(('Numerical','Analytic'))
-    savefig('velocity.png')
+    legend(('Numerical','Analytic'),'upper left')
+    savefig('velocity_vsic.png')
 
     figure(3)
     title('Pressure')
@@ -63,7 +63,7 @@ def uPlotter(u,x):
     xlabel('x')
     ylabel('p')
     legend(('Numerical','Analytic'))
-    savefig('pressure.png')
+    savefig('pressure_vsic.png')
     
     figure(4)
     title('Mach Number')
@@ -72,8 +72,8 @@ def uPlotter(u,x):
     plot(x,ME,'r')
     xlabel('x')
     ylabel('p')
-    legend(('Numerical','Analytic'))
-    savefig('MachNum.png')
+    legend(('Numerical','Analytic'),'upper left')
+    savefig('MachNum_vsic.png')
     
     figure(5)
     title('Total Enthalpy')
@@ -82,8 +82,8 @@ def uPlotter(u,x):
     plot(x,HE,'r')
     xlabel('x')
     ylabel('p')
-    legend(('Numerical','Analytic'))
-    savefig('totalEnthalpy.png')
+    legend(('Numerical','Analytic'),'upper left')
+    savefig('totalEnthalpy_vsic.png')
 
     figure(6)
     title('Entropy')
@@ -92,8 +92,8 @@ def uPlotter(u,x):
     plot(x,pE/(rhoE**g),'r')
     xlabel('x')
     ylabel('p')
-    legend(('Numerical','Analytic'))
-    savefig('entropy.png')
+    legend(('Numerical','Analytic'),'upper left')
+    savefig('entropy_vsic.png')
 
     show()
     
@@ -104,7 +104,8 @@ def uPlotter(u,x):
 ####################
 def uPredictor(u,f):
     uBar = zeros((3,n))
-    uBar[:,1:n-1] = u[:,1:n-1]-tau*(f[:,2:n]-f[:,1:n-1])
+    (dp,dm) = DCalc(u)
+    uBar[:,1:n-1] = u[:,1:n-1]-tau*(f[:,2:n]-f[:,1:n-1])+tau*dp[:,1:n-1]-tau*dm[:,1:n-1]
     uBar[:,0] = u[:,0]
     uBar[:,-1] = u[:,-1]
     return uBar
@@ -114,7 +115,8 @@ def uPredictor(u,f):
 ####################
 def uCorrector(u,fBar):
     uBarBar = zeros((3,n))
-    uBarBar[:,1:n-1] = u[:,1:n-1]-tau*(fBar[:,1:n-1]-fBar[:,0:n-2])
+    (dp,dm) = DCalc(u)
+    uBarBar[:,1:n-1] = u[:,1:n-1]-tau*(fBar[:,1:n-1]-fBar[:,0:n-2])+tau*dp[:,1:n-1]-tau*dm[:,1:n-1]
     uBarBar[:,0] = u[:,0]
     uBarBar[:,-1] = u[:,-1]
     return uBarBar
@@ -237,6 +239,45 @@ def computeAnalytic(ts):
     return(u,p,rho,H,C,M)
 
 ##################
+## D Calculator ##
+##################
+def DCalc(u):
+    a2 = 1./4
+    a4 = 1./256
+    eps2 = zeros(n)
+    eps212p = zeros(n)
+    eps212m = zeros(n)
+    eps412p = zeros(n)
+    eps412m = zeros(n)
+    d12p = zeros((3,n))
+    d12m = zeros((3,n))
+    U = zeros(n)
+    
+    upcp = zeros(n)
+    upcm = zeros(n)
+
+    for i in range(1,n-1):
+        upcp[i] = 1./2*(abs(U[i])+C[i]+abs(U[i+1])+C[i+1])
+        upcm[i] = 1./2*(abs(U[i])+C[i]+abs(U[i-1])+C[i-1])
+    U[:] = u[1,:]/u[0,:]
+    
+    for i in range(1,n-1):
+        if (p[i+1]-2*p[i]+p[i-1]) != 0:
+            eps2[i] = a2*(abs(U[i])+C[i])*abs(p[i+1]-2*p[i]+p[i-1])/(p[i+1]-2*p[i]+p[i-1])
+    for i in range(1,n-1):
+        eps212p[i] = max(eps2[i],eps2[i+1])
+        eps212m[i] = max(eps2[i],eps2[i-1])
+        eps412p[i] = max(0,a4-eps212p[i]/upcp[i])
+        eps412m[i] = max(0,a4-eps212m[i]/upcm[i])
+    for i in range(2,n-2):
+        d12p[:,i] = eps212p[i]*(u[:,i+1]-u[:,i])+eps412p[i]*(u[:,i+2]-3*u[:,i+1]+3*u[:,i]-u[:,i-1])
+#        d12m[:,i] = eps212m[i]*(u[:,i]-u[:,i-1])+eps412m[i]*(u[:,i-2]-3*u[:,i-1]+3*u[:,i]-u[:,i+1]) 
+        d12m[:,i] = eps212m[i]*(u[:,i]-u[:,i-1])+eps412m[i]*(u[:,i+1]-3*u[:,i-2]+3*u[:,i-1]-u[:,i]) 
+    return(d12p,d12m)
+
+
+
+##################
 ## Main Program ##
 ##################
 
@@ -308,6 +349,7 @@ uPlotter(u,x)
 
 P = pNewton()
 print P
+
 
 
 

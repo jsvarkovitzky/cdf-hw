@@ -82,7 +82,7 @@ def uPlotter(u,x):
     plot(x,HE,'r')
     xlabel('x')
     ylabel('p')
-    legend(('Numerical','Analytic'))
+    legend(('Numerical','Analytic'),'upper left')
     savefig('totalEnthalpy.png')
 
     figure(6)
@@ -92,7 +92,7 @@ def uPlotter(u,x):
     plot(x,pE/(rhoE**g),'r')
     xlabel('x')
     ylabel('p')
-    legend(('Numerical','Analytic'))
+    legend(('Numerical','Analytic'),'upper left')
     savefig('entropy.png')
 
     show()
