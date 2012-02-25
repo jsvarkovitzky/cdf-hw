@@ -1,0 +1,121 @@
+\documentclass[a4paper,12pt,titlepage]{article}
+
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{subfigure}
+
+\parindent=0pt% This enforces no indent!
+\newcommand{\scale}{0.5}
+\begin{document}
+
+
+
+\title{Euler's Equation in the Shock Tube}
+\author{Jonathan Varkovitzky}
+\maketitle
+
+
+\pagestyle{plain} % No headers, just page numbers
+\pagenumbering{roman} % Roman numerals
+\tableofcontents
+
+\newpage
+
+\pagenumbering{roman}
+\setcounter{page}{2}
+%\listoffigures
+
+%\newpage
+
+\pagenumbering{arabic}
+\abstract{Here we investigate the solution of Euler's equations being applied to the shock tube problem and compare our results with the known analytic solution. The numerical method we use is a MacCormick predictor-corrector-update method.}
+
+
+
+\newpage
+
+
+
+\section{Setting up of the Shock Tube}
+
+We are going to performing our computations on the idealized shock tube problem.  This means that we have a domain that is divided in the cetner with the paramers initially constant through out each individual half of the domain.  We begin our simulation enforcing that $\frac{\rho_L}{\rho_R} = 8,\ \frac{p_L}{p_R} = 10,\ u_L=u_R=0$.  The exact values of $\rho$ and $p$ we set were:
+
+\begin{eqnarray}
+&& \rho_L = 1.0\ \frac{Kg}{m^3} \nonumber \\ 
+&& \rho_R = 0.125\ \frac{Kg}{m^3} \nonumber \\
+&& p_L = 10^5\ Pa \nonumber \\
+&& p_R = 10^4\ Pa \nonumber
+\end{eqnarray}
+
+Note, since in our simulations are not permitted to run until the shock reaches the boundary we can fix the boundary conditions to match these initial conditions and not need to worry about enforcing them at a later time.
+
+The governing equations for our system are the Euler Equation and take the following form:
+
+\begin{eqnarray}
+&&\frac{\partial U}{\partial t} + \frac{\partial F}{\partial x} = 0\nonumber \\
+&&U = \begin{bmatrix}\rho \\ \rho u \\ \rho E \end{bmatrix},\ F = \begin{bmatrix}\rho u\\ \rho u^2 + p\\ \rho u H \end{bmatrix}
+\end{eqnarray}
+
+\section{Numerical Solution}
+
+As previously mentioned to solve this problem we used a MacCormack predictor-corrector-update method where the corrector step samples backwards in space.  The reason that we choose to use this method over the other forms of the MacCormack method is that since the shock is propigating to the right we need a method that samples leftward to 'sense' the incoming shock.  The form of this method is:
+
+\begin{eqnarray}
+&&\mbox{Predictor: } \bar{U}_i = U_i^n - \tau(F_{i+1}^n-F_i^n)\nonumber \\
+&&\mbox{Corrector: } \bar{\bar{U}}_i = U_i^n-\tau(\bar{F}_i-\bar{F}_{i-1})\nonumber \\
+&&\mbox{Update:    } U_i^{n+1} = \frac{1}{2}(\bar{U}_i^n+\bar{\bar{U}}_i^n) 
+\end{eqnarray}
+
+As stated before we do not want to allow our simulation to run long enough for the shock to reach the boundaries, and in fact we allow our simulation to run until some $t^*$ such that $t^* = 0.75 t_{max}$ where $t_{max}$ is the time it takes the shock to reach the wall.  Based on the known shock speed C we know that $t_{max} = 6.7479 \times 10^{-4}$.  Below we have the plots of density, velocity, pressure, mach number, total enthalpy, and entropy.  In the solutions below we notice oscillations near boundaries defined by the shock, contact discontinuity, and rarefaction wave.  The resons these oscillations occur is that MacCormack's method is a second order scheme and hence introduces artificial oscillations into our solution.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{density.png}
+    \caption{Density Profile of the Shock Tube}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{velocity.png}
+    \caption{Velocity Profile of the Shock Tube}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{pressure.png}
+    \caption{Pressure Profile of the Shock Tube}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{MachNum.png}
+    \caption{Mach Number Profile of the Shock Tube}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{totalEnthalpy.png}
+    \caption{Total Enthalpy Profile of the Shock Tube}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{entropy.png}
+    \caption{Entropy Profile of the Shock Tube}
+  \end{center}
+\end{figure}
+
+\section{Addition of Artificial Viscosity}
+
+Since MacCormacks method introduces artificial oscillations we can introduce an artificial viscosity term which behaves like a limiter to dampen out these oscillations.  This method is known as the MacCormack-Baldwin method and it introduces a forth order dissipation term to the equation we solve.  The addition of the terms 
+
+\end{document}
