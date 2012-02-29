@@ -74,7 +74,7 @@ def bcPlotter(x,y):
     plot(x[0,:],y[0,:],'b')
     plot(x[n-1,:],y[n-1,:],'k--')
     legend(('Bottom Boundary','Top Boundary','Left Boundary','Right Boundary'))
-    
+    savefig('BCs')
     return
 
 ##########################
@@ -89,13 +89,18 @@ def initMeshPlotter(x,y):
         plot(x[i,:],y[i,:],'b')
     for j in range(0,m):
         plot(x[:,j],y[:,j],'b')
-    plot(x[:,0],y[:,0],'r.')
-    plot(x[0,0],y[0,0],'g.')
+    plot(x[:,0],y[:,0],'r')
+    plot(x[0,0],y[0,0],'g')
     axis([-10.5,10.5,-10.5,10.5]) 
 #    legend(('Transfinite Interpolation','NACA 0012 Airfoil'))
     savefig('initMesh')
     axis([-1.0,1.0,-1.0,1.0]) 
     savefig('initMeshZoom')
+    axis([-0.7,-0.35,-0.25,0.25])
+    savefig('initMeshLineZoomHead')
+    axis([0.35,0.7,-0.25,0.25])
+    savefig('initMeshLineZoomTail')
+
     return
 
 ##################
@@ -112,7 +117,6 @@ def meshPlotter(x,y):
         plot(x[:,j],y[:,j],'b')
     plot(x[:,0],y[:,0],'r')
     savefig('meshPlot')
-    show()
     return
 
 ######################
@@ -231,11 +235,21 @@ def SOR(Rmin,omega,xsmall,ysmall):
                 #Define clustering values
                 b = 7000
                 d = 5
+                a = 2000
+                c = 10
                 i_cluster = 10
                 j_cluster = 40
-                P = -b*sign(i-i_cluster)*exp(-d*sqrt((i-i_cluster)**2+(j-j_cluster)**2)) 
-                Q = -b*sign(j-j_cluster)*exp(-d*sqrt((i-i_cluster)**2+(j-j_cluster)**2))
-                
+                #Point Cluster Takes 561 iterations
+#                P = -b*sign(i-i_cluster)*exp(-d*sqrt((i-i_cluster)**2+(j-j_cluster)**2)) 
+#                Q = -b*sign(j-j_cluster)*exp(-d*sqrt((i-i_cluster)**2+(j-j_cluster)**2))
+                #Line Cluster
+#                P = 0
+#                Q = a*sign(j-j_cluster)*exp(-c*abs(j-j_cluster))
+                #No Cluster Takes 478 iterations
+                P = 0
+                Q = 0
+ 
+
                 #SOR step
                 x[i,j] = 1./(2*(alpha+gamma))*(alpha*(x[i-1,j]+x[i+1,j])-0.5*beta*(x[i+1,j+1]-x[i-1,j+1]-x[i+1,j-1]+x[i-1,j-1])+gamma*(x[i,j-1]+x[i,j+1])+0.5*delta*P*(x[i+1,j]-x[i-1,j])+0.5*delta*Q*(x[i,j+1]-x[i,j-1]))
                 y[i,j] = 1./(2*(alpha+gamma))*(alpha*(y[i-1,j]+y[i+1,j])-0.5*beta*(y[i+1,j+1]-y[i-1,j+1]-y[i+1,j-1]+y[i-1,j-1])+gamma*(y[i,j-1]+y[i,j+1])+0.5*delta*P*(y[i+1,j]-y[i-1,j])+0.5*delta*Q*(y[i,j+1]-y[i,j-1]))
@@ -287,8 +301,16 @@ def meshPlotter(x,y):
     ylabel('y')
     title('Plot with mesh lines')
     savefig('meshLines')
-#    axis([-1.0,1.0,-1.0,1.0])
+    axis([-1.0,1.0,-1.0,1.0])
     savefig('meshLinesZoom')
+    axis([0,2.5,-1.5,0])
+    savefig('meshLineZoom2')
+    axis([-0.7,-0.35,-0.25,0.25])
+    savefig('meshLineZoomHead')
+    axis([0.35,0.7,-0.25,0.25])
+    savefig('meshLineZoomTail')
+    
+    
     return
 
 ##################
@@ -303,11 +325,15 @@ Rmin = 10**(-6)
 omega = 1.8
 airfoil = loadAirfoil()
 x,y = initBC()
-#bcPlotter(x,y)
-#plotAirfoil(airfoil)
+bcPlotter(x,y)
+plotAirfoil(airfoil)
 x,y = initMesh(x,y)
-#initMeshPlotter(x,y)
+initMeshPlotter(x,y)
 x,y,res = SOR(Rmin,omega,x,y)
 meshPlotter(x,y)
-#resPlotter(res)
+resPlotter(res)
 show()
+
+#added for hw5 to import grids without needing to rerun code:
+savetxt('x_pts.txt',x)
+savetxt('y_pts.txt',y)
