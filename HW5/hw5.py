@@ -37,6 +37,23 @@ def cellAreas(xs,ys):
             xbd = array([xs[i+1,j+1]-xs[i,j],ys[i+1,j+1]-ys[i,j]])
             omega[i,j] = 1./2*abs(cross(xac,xbd))
     return omega
+
+##########################
+## Compute Cell Normals ##
+##########################
+def cellNorms(xs,ys):
+    sxx = zeros((n,m))
+    sxy = zeros((n,m))
+    syx = zeros((n,m))
+    syy = zeros((n,m))
+    
+    sxx[0:n,0:m] = ys[1:n+1,1:m+1]-ys[1:n+1,0:m]
+    sxy[0:n,0:m] = -(xs[1:n+1,1:m+1]+xs[1:n+1,0:m])
+    syx[0:n,0:m] = sxy[0:n,0:m]
+    syy[0:n,0:m] = -sxx[0:n,0:m]
+
+    return (sxx,sxy,syx,syy)
+
 ##################
 ## Mesh Plotter ##
 ##################
@@ -64,7 +81,11 @@ m = 65-1
 
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
+print "Computing Cell Centers..."
 (x,y) = cellCenters(x_mesh,y_mesh)
+print "Computing Cell Areas..."
 omega = cellAreas(x_mesh,y_mesh)
+print "Computing Cell Normals..."
+(sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 #meshPlotter(x_mesh,y_mesh,x,y)
-show()
+#show()
