@@ -7,6 +7,9 @@
 from numpy import *
 from scipy import *
 from pylab import *
+import os
+import jameson
+
 ################
 ## Load Grids ##
 ################
@@ -48,7 +51,7 @@ def cellNorms(xs,ys):
     syy = zeros((n,m))
     
     sxx[0:n,0:m] = ys[1:n+1,1:m+1]-ys[1:n+1,0:m]
-    sxy[0:n,0:m] = -(xs[1:n+1,1:m+1]+xs[1:n+1,0:m])
+    sxy[0:n,0:m] = -(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])
     syx[0:n,0:m] = sxy[0:n,0:m]
     syy[0:n,0:m] = -sxx[0:n,0:m]
 
@@ -69,9 +72,23 @@ def meshPlotter(xs,ys,x,y):
     title('Plot with Mesh and Cell Centers')
     return
 
+###########################
+## Normal Vector Plotter ##
+###########################
+def normalPlotter(x,y,xs,ys,sxx,sxy,syx,syy):
+    figure(2)
+    for i in range(0,n+1):
+        plot(xs[i,:],ys[i,:],'b')
+    for j in range(0,m+1):
+        plot(xs[:,j],ys[:,j],'b')
+    plot(x,y,'r.')
+    quiver(x,y,sxx,sxy)
+    quiver(x,y,syx,syy)
+    title('Cell Normal Directions')
+    xlabel('x')
+    ylabel('y')
 
-
-
+    return
 ##################
 ## Main Program ##
 ##################
@@ -88,4 +105,13 @@ omega = cellAreas(x_mesh,y_mesh)
 print "Computing Cell Normals..."
 (sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 #meshPlotter(x_mesh,y_mesh,x,y)
+#normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
 #show()
+
+x = transpose(x)
+y = transpose(y)
+sxx = transpose(sxx)
+sxy = transpose(sxy)
+syx = transpose(syx)
+syy = transpose(syy)
+b = jameson.jameson(x,y,sxx,sxy,syx,syy)
