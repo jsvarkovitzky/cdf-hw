@@ -50,8 +50,8 @@ def cellNorms(xs,ys):
     syx = zeros((n,m))
     syy = zeros((n,m))
     
-    sxx[0:n,0:m] = -ys[1:n+1,1:m+1]-ys[1:n+1,0:m]/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
-    sxy[0:n,0:m] = (xs[1:n+1,1:m+1]-xs[1:n+1,0:m])/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
+    sxx[0:n,0:m] = -ys[1:n+1,1:m+1]-ys[1:n+1,0:m]#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
+    sxy[0:n,0:m] = (xs[1:n+1,1:m+1]-xs[1:n+1,0:m])#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
     syx[0:n,0:m] = sxy[0:n,0:m]
     syy[0:n,0:m] = -sxx[0:n,0:m]
 
@@ -136,7 +136,7 @@ syx = transpose(syx)
 syy = transpose(syy)
 
 #Set IC's and BC's together assuming an initial uniform velocity field
-M_stream = 0.85*10
+M_stream = 0.85
 u = zeros((4,m,n))
 F = zeros((4,m,n))
 
