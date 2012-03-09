@@ -7,6 +7,7 @@
 from numpy import *
 from scipy import *
 from pylab import *
+import time
 import os
 
 
@@ -49,11 +50,11 @@ def cellNorms(xs,ys):
     sxy = zeros((n,m))
     syx = zeros((n,m))
     syy = zeros((n,m))
-    
     sxx[0:n,0:m] = -ys[1:n+1,1:m+1]-ys[1:n+1,0:m]#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
     sxy[0:n,0:m] = (xs[1:n+1,1:m+1]-xs[1:n+1,0:m])#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
     syx[0:n,0:m] = sxy[0:n,0:m]
     syy[0:n,0:m] = -sxx[0:n,0:m]
+
 
     return (sxx,sxy,syx,syy)
 
@@ -86,6 +87,15 @@ def g_func(u):
     G[3,:,:] = (u[3,:,:]+p[:,:])*(u[2,:,:]/u[0,:,:])
 
     return (G)
+######################
+## Flux Calculation ##
+######################
+def flux(u,sx,sy):
+
+    
+
+    return Flux
+
 ##################
 ## Mesh Plotter ##
 ##################
@@ -139,7 +149,7 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 ##################
 ## Main Program ##
 ##################
-
+start_time = time.time()
 n = 128
 m = 64
 g = 1.4
@@ -180,3 +190,5 @@ u[:,0,:] = u[:,-2,:]
 u[2,:,0] = -u[2,:,0]#negate y velocity
 
 
+
+print time.time() - start_time, "seconds"
