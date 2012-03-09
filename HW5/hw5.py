@@ -62,8 +62,12 @@ def cellNorms(xs,ys):
 ## F Function ##
 ################
 def f_func(u):
-    F = zeros((4,n,m))
-    p = zeros((n,m))
+    N = shape(u)[1]
+    M = shape(u)[2]
+    F = zeros((4,N,M))
+    p = zeros((N,M))
+    
+    u[0,:,:] = rho
 
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
     F[0,:,:] = u[1,:,:]
@@ -71,14 +75,24 @@ def f_func(u):
     F[2,:,:] = u[1,:,:]*u[2,:,:]/u[0,:,:]
     F[3,:,:] = (u[3,:,:]+p[:,:])*(u[1,:,:]/u[0,:,:])
 
+    #Impose airfoil BCs
+    F[0,:,0] = 0
+    F[1,1:-1,0] = p[1:-1,0]*sxx[:,0]
+    F[2,1:-1,0] = p[1:-1,0]*sxy[:,0]
+    F[3,:,0] = 0
     return (F)
 
 ################
 ## G Function ##
 ################
 def g_func(u):
-    G = zeros((4,n,m))
-    p = zeros((n,m))
+
+    N = shape(u)[1]
+    M = shape(u)[2]
+    G = zeros((4,N,M))
+    p = zeros((N,M))
+
+    u[0,:,:] = rho
 
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
     G[0,:,:] = u[1,:,:]
@@ -86,14 +100,47 @@ def g_func(u):
     G[2,:,:] = u[2,:,:]**2/u[0,:,:] + p[:,:]
     G[3,:,:] = (u[3,:,:]+p[:,:])*(u[2,:,:]/u[0,:,:])
 
+
+    #Impose airfoil BCs
+    G[0,:,0] = 0
+    G[1,1:-1,0] = p[1:-1,0]*syx[:,0]
+    G[2,1:-1,0] = p[1:-1,0]*syy[:,0]
+    G[3,:,0] = 0
+
+
     return (G)
 ######################
 ## Flux Calculation ##
 ######################
-def flux(u,sx,sy):
-
+def flux(u_in,sxx,sxy,syx,syy):
     
+    u = zeros((4,n+2,m+1))
+    u[:,1:n+1,0:m] = u_in[:,:,:]
 
+    #Branch Cut BC
+    u[:,-1,0:m] = u_in[:,0,:]
+    u[:,0,0:m] = u_in[:,-1,:]
+    #Airfoil BC
+    #Impose this in the Flux definition
+    
+    #Outer BC
+    print "******************************"
+    print "** Dont forget the outer BC **"
+    print "******************************"
+    
+    F = f_func(u)
+    G = g_func(u)
+
+    fRight = zeros((n,m))
+
+    print shape(F)
+    print shape(fRight)
+
+    fLeft = zeros((n,m))
+    fUp = zeros((n,m))
+    fDown = zeros((n,m))
+
+    Flux = fRight+fLeft+fUp+fDown
     return Flux
 
 ##################
@@ -167,7 +214,6 @@ print "Computing Cell Normals..."
 (sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 #meshPlotter(x_mesh,y_mesh,x,y)
 #normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
-
 print "Initializing vectors..."
 #Set IC's and BC's together assuming an initial uniform velocity field
 u = zeros((4,n,m))
@@ -177,17 +223,8 @@ u[0,:,:] = 1.0*1000 #initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
-#Set initial F and G values
-F = f_func(u)
-G = g_func(u) 
-#Set initial Boundaries
 
-#Branch Cut
-u[:,-1,:] = u[:,1,:]
-u[:,0,:] = u[:,-2,:]
-
-#Airfoil
-u[2,:,0] = -u[2,:,0]#negate y velocity
+flux(u,sxx,sxy,syx,syy)
 
 
 
