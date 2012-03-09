@@ -140,8 +140,8 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 ## Main Program ##
 ##################
 
-n = 129-1
-m = 65-1
+n = 128
+m = 64
 g = 1.4
 p_0 = 10**5
 rho = 1
@@ -158,6 +158,7 @@ print "Computing Cell Normals..."
 #meshPlotter(x_mesh,y_mesh,x,y)
 #normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
 
+print "Initializing vectors..."
 #Set IC's and BC's together assuming an initial uniform velocity field
 u = zeros((4,n,m))
 F = zeros((4,n,m))
@@ -166,11 +167,16 @@ u[0,:,:] = 1.0*1000 #initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
-
+#Set initial F and G values
 F = f_func(u)
 G = g_func(u) 
+#Set initial Boundaries
 
-velocityPlotter(x,y,x_mesh,y_mesh,u[1,:,:],u[2,:,:])
+#Branch Cut
+u[:,-1,:] = u[:,1,:]
+u[:,0,:] = u[:,-2,:]
+
+#Airfoil
+u[2,:,0] = -u[2,:,0]#negate y velocity
 
 
-#show()
