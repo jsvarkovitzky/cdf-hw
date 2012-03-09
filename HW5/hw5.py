@@ -100,13 +100,11 @@ def g_func(u):
     G[2,:,:] = u[2,:,:]**2/u[0,:,:] + p[:,:]
     G[3,:,:] = (u[3,:,:]+p[:,:])*(u[2,:,:]/u[0,:,:])
 
-
     #Impose airfoil BCs
     G[0,:,0] = 0
     G[1,1:-1,0] = p[1:-1,0]*syx[:,0]
     G[2,1:-1,0] = p[1:-1,0]*syy[:,0]
     G[3,:,0] = 0
-
 
     return (G)
 ######################
@@ -131,15 +129,20 @@ def flux(u_in,sxx,sxy,syx,syy):
     F = f_func(u)
     G = g_func(u)
 
-    fRight = zeros((n,m))
+    #Initialize Fluxes
+    fRight = zeros((4,n,m))
+    fLeft = zeros((4,n,m))
+    fUp = zeros((4,n,m))
+    fDown = zeros((4,n,m))
 
-    print shape(F)
-    print shape(fRight)
-
-    fLeft = zeros((n,m))
-    fUp = zeros((n,m))
-    fDown = zeros((n,m))
-
+    print shape(fRight[:,1:n+1,:])
+    print shape(F[:,1:n+1,1:m+1])
+    print shape(1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:])
+    #i+1/2 flux
+    fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
+    fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
+    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,:]
+#    fDown[:,0:n+1,:] = 1./2*(F[:,0:n,0:m]+F[:,0:n,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,0:m]+G[:,0:n,1:m+1])*sxy[:,:]
     Flux = fRight+fLeft+fUp+fDown
     return Flux
 
