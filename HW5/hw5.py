@@ -8,7 +8,7 @@ from numpy import *
 from scipy import *
 from pylab import *
 import os
-import jameson
+
 
 ################
 ## Load Grids ##
@@ -57,6 +57,35 @@ def cellNorms(xs,ys):
 
     return (sxx,sxy,syx,syy)
 
+################
+## F Function ##
+################
+def f_func(u):
+    F = zeros((4,n,m))
+    p = zeros((n,m))
+
+    p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
+    F[0,:,:] = u[1,:,:]
+    F[1,:,:] = u[1,:,:]**2/u[0,:,:] + p[:,:]
+    F[2,:,:] = u[1,:,:]*u[2,:,:]/u[0,:,:]
+    F[3,:,:] = (u[3,:,:]+p[:,:])*(u[1,:,:]/u[0,:,:])
+
+    return (F)
+
+################
+## G Function ##
+################
+def g_func(u):
+    G = zeros((4,n,m))
+    p = zeros((n,m))
+
+    p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
+    G[0,:,:] = u[1,:,:]
+    G[1,:,:] = u[1,:,:]*u[2,:,:]/u[0,:,:]
+    G[2,:,:] = u[2,:,:]**2/u[0,:,:] + p[:,:]
+    G[3,:,:] = (u[3,:,:]+p[:,:])*(u[2,:,:]/u[0,:,:])
+
+    return (G)
 ##################
 ## Mesh Plotter ##
 ##################
@@ -113,8 +142,10 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 
 n = 129-1
 m = 65-1
-gamma = 1.4
+g = 1.4
 p_0 = 10**5
+rho = 1
+M_stream = 0.85
 
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
@@ -125,28 +156,21 @@ omega = cellAreas(x_mesh,y_mesh)
 print "Computing Cell Normals..."
 (sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 #meshPlotter(x_mesh,y_mesh,x,y)
-normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
-#show()
-
-x = transpose(x)
-y = transpose(y)
-sxx = transpose(sxx)
-sxy = transpose(sxy)
-syx = transpose(syx)
-syy = transpose(syy)
+#normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
 
 #Set IC's and BC's together assuming an initial uniform velocity field
-M_stream = 0.85
-u = zeros((4,m,n))
-F = zeros((4,m,n))
-
+u = zeros((4,n,m))
+F = zeros((4,n,m))
+G = zeros((4,n,m))
 u[0,:,:] = 1.0*1000 #initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
-#u[3,:,:] = p_0/(gamma-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2cat#initialize energy
+u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
 
+F = f_func(u)
+G = g_func(u) 
 
 velocityPlotter(x,y,x_mesh,y_mesh,u[1,:,:],u[2,:,:])
-b = jameson.jameson(x,y,sxx,sxy,syx,syy,u)
+
 
 #show()
