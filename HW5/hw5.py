@@ -135,14 +135,15 @@ def flux(u_in,sxx,sxy,syx,syy):
     fUp = zeros((4,n,m))
     fDown = zeros((4,n,m))
 
-    print shape(fRight[:,1:n+1,:])
-    print shape(F[:,1:n+1,1:m+1])
-    print shape(1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:])
+#    print shape(fUp[:,0:n+1,1:m])
+#    print shape(F[:,0:n,1:m])
+#    print shape(1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1]))
     #i+1/2 flux
     fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
     fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
-    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,:]
-#    fDown[:,0:n+1,:] = 1./2*(F[:,0:n,0:m]+F[:,0:n,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,0:m]+G[:,0:n,1:m+1])*sxy[:,:]
+    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,1:m]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,1:m]
+    fDown[:,0:n+1,1:m] = 1./2*(F[:,0:n,0:m-1]+F[:,0:n,1:m])*sxx[:,0:m-1]+1./2*(G[:,0:n,0:m-1]+G[:,0:n,1:m])*sxy[:,0:m-1]
+
     Flux = fRight+fLeft+fUp+fDown
     return Flux
 
