@@ -158,13 +158,13 @@ def flux(u_in):
 ####################
 def tau_func(u):
 
-    tau = zeros((n,m))
+    tau = zeros((n+2,m+1))
     c = zeros((n,m))
     p = zeros((n,m))
 
-    p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
-    c[:,:] = sqrt(p[:,:]/u[0,:,:])
-    tau[:,:] = CFL/((u[1,:,:]/u[0,:,:]+c[:,:])*sxx[:,:]+(u[2,:,:]/u[0,:,:]+c[:,:])*sxy[:,:]+(u[1,:,:]/u[0,:,:]+c[:,:])*syx[:,:]+(u[2,:,:]/u[0,:,:]+c[:,:])*syy[:,:])
+    p[:,:] = (g-1)*(u[3,0:n,0:m]-(u[1,0:n,0:m]**2+u[2,0:n,0:m]**2)/(2*u[0,0:n,0:m]))
+    c[:,:] = sqrt(p[:,:]/u[0,0:n,0:m])
+    tau[1:n+1,0:m] = CFL/(abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syy[:,:]))
     return(tau)
 
 ##################
@@ -251,24 +251,26 @@ print "Computing Cell Normals..."
 print "Initializing vectors..."
 
 #Set IC's and BC's together assuming an initial uniform velocity field
-u = zeros((4,n,m))
-F = zeros((4,n,m))
-G = zeros((4,n,m))
-u[0,:,:] = 1.0*1000 #initialize rho
+u = zeros((4,n+2,m+1))
+F = zeros((4,n+2,m+1))
+G = zeros((4,n+2,m+1))
+u[0,:,:] = 1.0*1000#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
-"""
+
 a1 = 1./4
 a2 = 1./3
 a3 = 1./2
 a4 = 1./1
-tau = zeros((4,n,m))
+tau = zeros((4,n+2,m+1))
 tau[:,:] = tau_func(u)
-u1 = zeros((4,n,m))
-u2 = zeros((4,n,m))
-u3 = zeros((4,n,m))
+u1 = zeros((4,n+2,m+1))
+u2 = zeros((4,n+2,m+1))
+u3 = zeros((4,n+2,m+1))
 
+
+"""
 
 for i in range(0,2):
     
