@@ -157,14 +157,15 @@ def flux(u_in):
 ## Tau Calculator ##
 ####################
 def tau_func(u):
-
-    tau = zeros((n+2,m+1))
+    
+    #This function computes the time step in each cell normalized by cell area (not needed explicitly) and puts zeros in the ghost cell locations
+    tau = zeros((n,m))
     c = zeros((n,m))
     p = zeros((n,m))
 
     p[:,:] = (g-1)*(u[3,0:n,0:m]-(u[1,0:n,0:m]**2+u[2,0:n,0:m]**2)/(2*u[0,0:n,0:m]))
     c[:,:] = sqrt(p[:,:]/u[0,0:n,0:m])
-    tau[1:n+1,0:m] = CFL/(abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syy[:,:]))
+    tau[:,:] = CFL/(abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syy[:,:]))
     return(tau)
 
 ##################
@@ -254,6 +255,7 @@ print "Initializing vectors..."
 u = zeros((4,n+2,m+1))
 F = zeros((4,n+2,m+1))
 G = zeros((4,n+2,m+1))
+tau = zeros((4,n,m))
 u[0,:,:] = 1.0*1000#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
@@ -263,7 +265,7 @@ a1 = 1./4
 a2 = 1./3
 a3 = 1./2
 a4 = 1./1
-tau = zeros((4,n+2,m+1))
+#Calculate tau for all cells, zero values are in the ghost cells
 tau[:,:] = tau_func(u)
 u1 = zeros((4,n+2,m+1))
 u2 = zeros((4,n+2,m+1))
