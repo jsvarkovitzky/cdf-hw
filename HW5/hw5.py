@@ -110,7 +110,7 @@ def g_func(u):
 ######################
 ## Flux Calculation ##
 ######################
-def flux(u_in,sxx,sxy,syx,syy):
+def flux(u_in):
     
     u = zeros((4,n+2,m+1))
     u[:,1:n+1,0:m] = u_in[:,:,:]
@@ -122,9 +122,9 @@ def flux(u_in,sxx,sxy,syx,syy):
     #Impose this in the Flux definition
     
     #Outer BC
-    print "******************************"
-    print "** Dont forget the outer BC **"
-    print "******************************"
+#    print "******************************"
+#    print "** Dont forget the outer BC **"
+#    print "******************************"
     
     F = f_func(u)
     G = g_func(u)
@@ -146,6 +146,20 @@ def flux(u_in,sxx,sxy,syx,syy):
 
     Flux = fRight+fLeft+fUp+fDown
     return Flux
+
+####################
+## Tau Calculator ##
+####################
+def tau_func(u):
+
+    tau = zeros((n,m))
+    c = zeros((n,m))
+    p = zeros((n,m))
+
+    p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
+    c[:,:] = sqrt(p[:,:]/u[0,:,:])
+    tau[:,:] = CFL/((u[1,:,:]/u[0,:,:]+c[:,:])*sxx[:,:]+(u[2,:,:]/u[0,:,:]+c[:,:])*sxy[:,:]+(u[1,:,:]/u[0,:,:]+c[:,:])*syx[:,:]+(u[2,:,:]/u[0,:,:]+c[:,:])*syy[:,:])
+    return
 
 ##################
 ## Mesh Plotter ##
@@ -207,6 +221,7 @@ g = 1.4
 p_0 = 10**5
 rho = 1
 M_stream = 0.85
+CFL = 1.6
 
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
@@ -228,8 +243,20 @@ u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
 
-flux(u,sxx,sxy,syx,syy)
+a1 = 1./4
+a2 = 1./3
+a3 = 1./2
+a4 = 1./1
+tau = zeros((4,n,m))
+tau[:,:] = tau_func(u)
+u1 = zeros((4,n,m))
+u2 = zeros((4,n,m))
+u3 = zeros((4,n,m))
+u4 = zeros((4,n,m))
 
+for i in range(0,100):
+    
+    u1[:,:,:] = u[:,:,:] - a1*tau[:,:]*flux(u[:,:,:])
 
 
 print time.time() - start_time, "seconds"
