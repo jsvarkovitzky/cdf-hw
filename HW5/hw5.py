@@ -24,20 +24,20 @@ def loadXY():
 ##########################
 def cellCenters(xs,ys):
     #cell centers will have one less point than the grid
-    x = zeros((N-1,M-1))
-    y = zeros((N-1,M-1))
-    for k in range(0,M-1):
-        x[:,k] = 1./4*(xs[0:N-1,k]+xs[1:N,k]+xs[0:N-1,k+1]+xs[1:N,k+1])
-        y[:,k] = 1./4*(ys[0:N-1,k]+ys[1:N,k]+ys[0:N-1,k+1]+ys[1:N,k+1])
+    x = zeros((n,m))
+    y = zeros((n,m))
+    for k in range(0,m):
+        x[:,k] = 1./4*(xs[0:n,k]+xs[1:n+1,k]+xs[0:n,k+1]+xs[1:n+1,k+1])
+        y[:,k] = 1./4*(ys[0:n,k]+ys[1:n+1,k]+ys[0:n,k+1]+ys[1:n+1,k+1])
     return (x,y)
 
 ########################
 ## Compute Cell Areas ##
 ########################
 def cellAreas(xs,ys):
-    omega = zeros((n,m))
-    for i in range(0,n):
-        for j in range(0,m):
+    omega = zeros((N,M))
+    for i in range(0,N-1):
+        for j in range(0,M-1):
             xac = array([xs[i,j+1]-xs[i+1,j],ys[i,j+1]-ys[i+1,j]])
             xbd = array([xs[i+1,j+1]-xs[i,j],ys[i+1,j+1]-ys[i,j]])
             omega[i,j] = 1./2*abs(cross(xac,xbd))
@@ -47,14 +47,19 @@ def cellAreas(xs,ys):
 ## Compute Cell Normals ##
 ##########################
 def cellNorms(xs,ys):
+    #Note that radial normals are going clockwise, this is correct
+    #as our loops go through idicies clockwise and require the normals
+    #to be in the same direction.  To test directionality remove indicies
+    #in the mesh plotting as desired.
+
     sxx = zeros((n,m))
     sxy = zeros((n,m))
     syx = zeros((n,m))
     syy = zeros((n,m))
-    sxx[0:n,0:m] = ys[1:n+1,1:m+1]-ys[1:n+1,0:m]#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
-    sxy[0:n,0:m] = -(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
-    syx[0:n,0:m] = sxy[0:n,0:m]
-    syy[0:n,0:m] = -sxx[0:n,0:m]
+    sxx[0:n,0:m] = ys[1:N,1:M]-ys[1:N,0:M-1]
+    sxy[0:n,0:m] = -(xs[1:N,1:M]-xs[1:N,0:M-1])
+    syx[0:n,0:m] = sxy[:,:]
+    syy[0:n,0:m] = -sxx[:,:]
 
 
     return (sxx,sxy,syx,syy)
@@ -216,8 +221,8 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 ## Main Program ##
 ##################
 start_time = time.time()
-n = 130
-m = 65
+n = 128
+m = 64
 g = 1.4
 p_0 = 10**5
 rho = 1
@@ -227,22 +232,24 @@ CFL = 1.6
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
 
+print "-> The shape of the orig girds are: [%r %s]"%(shape(x_mesh)[0],shape(x_mesh)[1])
+
 #N,M are from shape of inputted grid
 N = shape(x_mesh)[0]
 M = shape(x_mesh)[1]
 
-
 print "Computing Cell Centers..."
 (x,y) = cellCenters(x_mesh,y_mesh)
-#print "Computing Cell Areas..."
-#omega = cellAreas(x_mesh,y_mesh)
-#print "Computing Cell Normals..."
-#(sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
+print "-> The shape of the cell center grids are: [%r %s]"%(shape(x)[0],shape(x)[1])
+print "Computing Cell Areas..."
+omega = cellAreas(x_mesh,y_mesh)
+print "Computing Cell Normals..."
+(sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 
-meshPlotter(x_mesh,y_mesh,x,y)
+#meshPlotter(x_mesh,y_mesh,x,y)
 #normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
-#print "Initializing vectors..."
-"""
+print "Initializing vectors..."
+
 #Set IC's and BC's together assuming an initial uniform velocity field
 u = zeros((4,n,m))
 F = zeros((4,n,m))
@@ -251,7 +258,7 @@ u[0,:,:] = 1.0*1000 #initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
-
+"""
 a1 = 1./4
 a2 = 1./3
 a3 = 1./2
