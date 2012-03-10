@@ -23,11 +23,12 @@ def loadXY():
 ## Compute Cell Centers ##
 ##########################
 def cellCenters(xs,ys):
-    x = zeros((n,m))
-    y = zeros((n,m))
-    for k in range(0,m):
-        x[:,k] = 1./4*(xs[0:n,k]+xs[1:n+1,k]+xs[0:n,k+1]+xs[1:n+1,k+1])
-        y[:,k] = 1./4*(ys[0:n,k]+ys[1:n+1,k]+ys[0:n,k+1]+ys[1:n+1,k+1])
+    #cell centers will have one less point than the grid
+    x = zeros((N-1,M-1))
+    y = zeros((N-1,M-1))
+    for k in range(0,M-1):
+        x[:,k] = 1./4*(xs[0:N-1,k]+xs[1:N,k]+xs[0:N-1,k+1]+xs[1:N,k+1])
+        y[:,k] = 1./4*(ys[0:N-1,k]+ys[1:N,k]+ys[0:N-1,k+1]+ys[1:N,k+1])
     return (x,y)
 
 ########################
@@ -50,8 +51,8 @@ def cellNorms(xs,ys):
     sxy = zeros((n,m))
     syx = zeros((n,m))
     syy = zeros((n,m))
-    sxx[0:n,0:m] = -ys[1:n+1,1:m+1]-ys[1:n+1,0:m]#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
-    sxy[0:n,0:m] = (xs[1:n+1,1:m+1]-xs[1:n+1,0:m])#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
+    sxx[0:n,0:m] = ys[1:n+1,1:m+1]-ys[1:n+1,0:m]#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
+    sxy[0:n,0:m] = -(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])#/sqrt((ys[1:n+1,1:m+1]-ys[1:n+1,0:m])**2+(xs[1:n+1,1:m+1]-xs[1:n+1,0:m])**2)
     syx[0:n,0:m] = sxy[0:n,0:m]
     syy[0:n,0:m] = -sxx[0:n,0:m]
 
@@ -138,7 +139,7 @@ def flux(u_in):
 #    print shape(fUp[:,0:n+1,1:m])
 #    print shape(F[:,0:n,1:m])
 #    print shape(1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1]))
-    #i+1/2 flux
+
     fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
     fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
     fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,1:m]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,1:m]
@@ -166,9 +167,9 @@ def tau_func(u):
 ##################
 def meshPlotter(xs,ys,x,y):
     figure(1)
-    for i in range(0,n+1):
+    for i in range(0,N):
         plot(xs[i,:],ys[i,:],'b')
-    for j in range(0,m+1):
+    for j in range(0,M):
         plot(xs[:,j],ys[:,j],'b')
     plot(x,y,'r.')
     xlabel('x')
@@ -215,8 +216,8 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 ## Main Program ##
 ##################
 start_time = time.time()
-n = 128
-m = 64
+n = 130
+m = 65
 g = 1.4
 p_0 = 10**5
 rho = 1
@@ -225,15 +226,23 @@ CFL = 1.6
 
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
+
+#N,M are from shape of inputted grid
+N = shape(x_mesh)[0]
+M = shape(x_mesh)[1]
+
+
 print "Computing Cell Centers..."
 (x,y) = cellCenters(x_mesh,y_mesh)
-print "Computing Cell Areas..."
-omega = cellAreas(x_mesh,y_mesh)
-print "Computing Cell Normals..."
-(sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
-#meshPlotter(x_mesh,y_mesh,x,y)
+#print "Computing Cell Areas..."
+#omega = cellAreas(x_mesh,y_mesh)
+#print "Computing Cell Normals..."
+#(sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
+
+meshPlotter(x_mesh,y_mesh,x,y)
 #normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
-print "Initializing vectors..."
+#print "Initializing vectors..."
+"""
 #Set IC's and BC's together assuming an initial uniform velocity field
 u = zeros((4,n,m))
 F = zeros((4,n,m))
@@ -254,7 +263,7 @@ u2 = zeros((4,n,m))
 u3 = zeros((4,n,m))
 
 
-for i in range(0,5):
+for i in range(0,2):
     
     u1[:,:,:] = u[:,:,:] - a1*tau[:,:]*flux(u[:,:,:])
     u2[:,:,:] = u[:,:,:] - a2*tau[:,:]*flux(u1[:,:,:])
@@ -262,3 +271,4 @@ for i in range(0,5):
     u[:,:,:] = u[:,:,:] - a4*tau[:,:]*flux(u3[:,:,:])
     
 print time.time() - start_time, "seconds"
+"""
