@@ -159,7 +159,7 @@ def tau_func(u):
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
     c[:,:] = sqrt(p[:,:]/u[0,:,:])
     tau[:,:] = CFL/((u[1,:,:]/u[0,:,:]+c[:,:])*sxx[:,:]+(u[2,:,:]/u[0,:,:]+c[:,:])*sxy[:,:]+(u[1,:,:]/u[0,:,:]+c[:,:])*syx[:,:]+(u[2,:,:]/u[0,:,:]+c[:,:])*syy[:,:])
-    return
+    return(tau)
 
 ##################
 ## Mesh Plotter ##
@@ -252,11 +252,13 @@ tau[:,:] = tau_func(u)
 u1 = zeros((4,n,m))
 u2 = zeros((4,n,m))
 u3 = zeros((4,n,m))
-u4 = zeros((4,n,m))
 
-for i in range(0,100):
+
+for i in range(0,5):
     
     u1[:,:,:] = u[:,:,:] - a1*tau[:,:]*flux(u[:,:,:])
-
-
+    u2[:,:,:] = u[:,:,:] - a2*tau[:,:]*flux(u1[:,:,:])
+    u3[:,:,:] = u[:,:,:] - a3*tau[:,:]*flux(u2[:,:,:])
+    u[:,:,:] = u[:,:,:] - a4*tau[:,:]*flux(u3[:,:,:])
+    
 print time.time() - start_time, "seconds"
