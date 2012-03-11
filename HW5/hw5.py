@@ -73,6 +73,7 @@ def f_func(u):
     F = zeros((4,N,M))
     p = zeros((N,M))
     
+    print "the shape of F is: %s %r %s"%(shape(F)[0],shape(F)[1],shape(F)[2])
     u[0,:,:] = rho
 
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
@@ -131,11 +132,11 @@ def flux(u):
 #    print shape(fUp[:,0:n+1,1:m])
 #    print shape(F[:,0:n,1:m])
 #    print shape(1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1]))
-    fRight[:,:] = 1./2*((F[:,1:n+1,0:m]+F[:,2:n+2,0:m])*sxx[:,:]+(G[:,1:n+1,0:m]+G[:,2:n+2,0:m])*sxy[:,:])
-    fLeft[:,:] = 1./2*((F[:,0:n,0:m]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,0:n,0:m]+G[:,1:n+1,0:m])*sxy[:,:])
-    fUp[:,:] = 1./2*((F[:,1:n+1,0:m]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,1:n+1,0:m]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    fRight[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:])
+    fLeft[:,:] = 1./2*((F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    fUp[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,2:m+2])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
     #fDown requires special handling of the airfoil ghost cell
-    fDown[:,:] = 1./2*((F[:,1:n+1,0:m]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,1:n+1,0:m]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    fDown[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
 #    fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
 #    fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
 #    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,1:m]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,1:m]
@@ -155,9 +156,9 @@ def tau_func(u):
     c = zeros((n,m))
     p = zeros((n,m))
 
-    p[:,:] = (g-1)*(u[3,0:n,0:m]-(u[1,0:n,0:m]**2+u[2,0:n,0:m]**2)/(2*u[0,0:n,0:m]))
-    c[:,:] = sqrt(p[:,:]/u[0,0:n,0:m])
-    tau[:,:] = CFL/(abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syx[:,:]+(u[2,1:n+1,0:m]/u[0,1:n+1,0:m]+c[:,:])*syy[:,:]))
+    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
+    c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
+    tau[:,:] = CFL/(abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syy[:,:]))
     return(tau)
 
 ##################
@@ -244,7 +245,7 @@ print "Computing Cell Normals..."
 print "Initializing vectors..."
 
 #Set IC's and BC's together assuming an initial uniform velocity field
-u = zeros((4,n+2,m+1))
+u = zeros((4,n+2,m+2))
 tau = zeros((4,n,m))
 u[0,:,:] = 1.0*1000#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
@@ -257,9 +258,9 @@ a3 = 1./2
 a4 = 1./1
 #Calculate tau for all cells, zero values are in the ghost cells
 tau[:,:] = tau_func(u)
-u1 = zeros((4,n+2,m+1))
-u2 = zeros((4,n+2,m+1))
-u3 = zeros((4,n+2,m+1))
+u1 = zeros((4,n+2,m+2))
+u2 = zeros((4,n+2,m+2))
+u3 = zeros((4,n+2,m+2))
 
 
 
