@@ -73,7 +73,6 @@ def f_func(u):
     F = zeros((4,N,M))
     p = zeros((N,M))
     
-    print "the shape of F is: %s %r %s"%(shape(F)[0],shape(F)[1],shape(F)[2])
     u[0,:,:] = rho
 
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
@@ -119,7 +118,7 @@ def g_func(u):
 ######################
 def flux(u):
     
-    
+    #Only need to compute F and G once
     F = f_func(u)
     G = g_func(u)
 
@@ -129,23 +128,67 @@ def flux(u):
     fUp = zeros((4,n,m))
     fDown = zeros((4,n,m))
 
-#    print shape(fUp[:,0:n+1,1:m])
-#    print shape(F[:,0:n,1:m])
-#    print shape(1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1]))
+    #Initialize Dissapative Terms
+    dRight = zeros((4,n,m))
+    dLeft = zeros((4,n,m))
+    dUp = zeros((4,n,m))
+    dDown = zeros((4,n,m))
+    maxNu = zeros((n,m))
+
+    #Compute flux for each direction individually without dissapation
     fRight[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:])
     fLeft[:,:] = 1./2*((F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
     fUp[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,2:m+2])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
-    #fDown requires special handling of the airfoil ghost cell
     fDown[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
-#    fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
-#    fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
-#    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,1:m]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,1:m]
-#    fDown[:,0:n+1,1:m] = 1./2*(F[:,0:n,0:m-1]+F[:,0:n,1:m])*sxx[:,0:m-1]+1./2*(G[:,0:n,0:m-1]+G[:,0:n,1:m])*sxy[:,0:m-1]
 
+    #Compute dissapation for each direction
+    (maxNui,maxNuj) = nu_max_func(u)
+#   dRight[:,:] = 
 
     Flux = fRight+fLeft+fUp+fDown
     return Flux
 
+####################
+## Tau Calculator ##
+####################
+def nu_max_func(u):
+    #This function computes the maximum nu required for the dissapation calculation and return an n x m vector of values
+    
+    nui = zeros((n,m))
+    nuj = zeros((n,m))
+    maxNui = zeros((n,m))
+    maxNuj = zeros((n,m))
+    p = zeros((n+2,m+2))
+
+    p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))    
+
+    nui[:,:] = abs((p[0:n,1:m+1]-2*p[1:n+1,1:m+1]+p[2:n+2,1:m+1])/(p[0:n,1:m+1]+2*p[1:n+1,1:m+1]+p[2:n+2,1:m+1]))
+    nuj[:,:] = abs((p[1:n+1,0:m]-2*p[1:n+1,1:m+1]+p[1:n+1,2:m+2])/(p[1:n+1,0:m]+2*p[1:n+1,1:m+1]+p[1:n+1,2:m+2]))
+
+    maxNui[1:n-2,:] = maximum(maximum(nui[0:n-3,:],nui[1:n-2,:]),maximum(nui[2:n-1,:],nui[3:n,:]))
+    maxNui[n-2,:] = maximum(nui[n-3,:],maximum(nui[n-2,:],nui[n-1,:]))
+    maxNui[n-1,:] = maximum(nui[n-2,:],nui[n-1,:])
+
+    maxNuj[:,1:m-2] = maximum(maximum(nuj[:,0:m-3],nuj[:,1:m-2]),maximum(nuj[:,2:m-1],nuj[:,3:m]))
+    maxNuj[:,m-2] = maximum(nuj[:,m-3],maximum(nuj[:,m-2],nuj[:,m-1]))
+    maxNuj[:,m-1] = maximum(nuj[:,m-2],nui[:,m-1])
+    return (maxNui,maxNuj)
+
+########################
+## Epsilon Calculator ##
+########################
+def eps_calc(u):
+    eps2 = zeros((n,m))
+    eps4 = zeros((n,m))
+
+    k2 = 1./4
+    k4 = 1./256
+
+    u_vel = u[1,1:n,1:m]/u[0,1:n,1:m]
+    v_vel = u[2,1:n,1:m]/u[0,1:n,1:m]
+
+    eps2[:,:] = 1./2*k2*(
+    return
 ####################
 ## Tau Calculator ##
 ####################
