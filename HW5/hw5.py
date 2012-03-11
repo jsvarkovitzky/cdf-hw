@@ -116,21 +116,8 @@ def g_func(u):
 ######################
 ## Flux Calculation ##
 ######################
-def flux(u_in):
+def flux(u):
     
-    u = zeros((4,n+2,m+1))
-    u[:,1:n+1,0:m] = u_in[:,:,:]
-
-    #Branch Cut BC
-    u[:,-1,0:m] = u_in[:,0,:]
-    u[:,0,0:m] = u_in[:,-1,:]
-    #Airfoil BC
-    #Impose this in the Flux definition
-    
-    #Outer BC
-#    print "******************************"
-#    print "** Dont forget the outer BC **"
-#    print "******************************"
     
     F = f_func(u)
     G = g_func(u)
@@ -144,11 +131,16 @@ def flux(u_in):
 #    print shape(fUp[:,0:n+1,1:m])
 #    print shape(F[:,0:n,1:m])
 #    print shape(1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1]))
+    fRight[:,:] = 1./2*((F[:,1:n+1,0:m]+F[:,2:n+2,0:m])*sxx[:,:]+(G[:,1:n+1,0:m]+G[:,2:n+2,0:m])*sxy[:,:])
+    fLeft[:,:] = 1./2*((F[:,0:n,0:m]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,0:n,0:m]+G[:,1:n+1,0:m])*sxy[:,:])
+    fUp[:,:] = 1./2*((F[:,1:n+1,0:m]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,1:n+1,0:m]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    #fDown requires special handling of the airfoil ghost cell
+    fDown[:,:] = 1./2*((F[:,1:n+1,0:m]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,1:n+1,0:m]+G[:,1:n+1,1:m+1])*sxy[:,:])
+#    fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
+#    fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
+#    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,1:m]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,1:m]
+#    fDown[:,0:n+1,1:m] = 1./2*(F[:,0:n,0:m-1]+F[:,0:n,1:m])*sxx[:,0:m-1]+1./2*(G[:,0:n,0:m-1]+G[:,0:n,1:m])*sxy[:,0:m-1]
 
-    fRight[:,0:n+1,:] = 1./2*(F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+1./2*(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:]
-    fLeft[:,0:n+1,:] = 1./2*(F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+1./2*(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:]
-    fUp[:,0:n+1,1:m] = 1./2*(F[:,0:n,1:m]+F[:,0:n,2:m+1])*sxx[:,1:m]+1./2*(G[:,0:n,1:m]+G[:,0:n,2:m+1])*sxy[:,1:m]
-    fDown[:,0:n+1,1:m] = 1./2*(F[:,0:n,0:m-1]+F[:,0:n,1:m])*sxx[:,0:m-1]+1./2*(G[:,0:n,0:m-1]+G[:,0:n,1:m])*sxy[:,0:m-1]
 
     Flux = fRight+fLeft+fUp+fDown
     return Flux
@@ -253,8 +245,6 @@ print "Initializing vectors..."
 
 #Set IC's and BC's together assuming an initial uniform velocity field
 u = zeros((4,n+2,m+1))
-F = zeros((4,n+2,m+1))
-G = zeros((4,n+2,m+1))
 tau = zeros((4,n,m))
 u[0,:,:] = 1.0*1000#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
@@ -272,14 +262,22 @@ u2 = zeros((4,n+2,m+1))
 u3 = zeros((4,n+2,m+1))
 
 
-"""
 
 for i in range(0,2):
+
+    #Branch Cut BC
+    u[:,-1,:] = u[:,1,:]
+    u[:,0,:] = u[:,-2,:]
+    FF = flux(u)
+#    print "******************************"
+#    print "** Dont forget the outer BC **"
+#    print "******************************"
+
     
-    u1[:,:,:] = u[:,:,:] - a1*tau[:,:]*flux(u[:,:,:])
-    u2[:,:,:] = u[:,:,:] - a2*tau[:,:]*flux(u1[:,:,:])
-    u3[:,:,:] = u[:,:,:] - a3*tau[:,:]*flux(u2[:,:,:])
-    u[:,:,:] = u[:,:,:] - a4*tau[:,:]*flux(u3[:,:,:])
+#    u1[:,:,:] = u[:,:,:] - a1*tau[:,:]*flux(u[:,:,:])
+#    u2[:,:,:] = u[:,:,:] - a2*tau[:,:]*flux(u1[:,:,:])
+#    u3[:,:,:] = u[:,:,:] - a3*tau[:,:]*flux(u2[:,:,:])
+#    u[:,:,:] = u[:,:,:] - a4*tau[:,:]*flux(u3[:,:,:])
     
 print time.time() - start_time, "seconds"
-"""
+
