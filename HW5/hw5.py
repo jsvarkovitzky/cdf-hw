@@ -142,7 +142,7 @@ def flux(u):
     fDown[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
 
     #Compute dissapation for each direction
-    (maxNui,maxNuj) = nu_max_func(u)
+    eps_val = eps_calc(u)
 #   dRight[:,:] = 
 
     Flux = fRight+fLeft+fUp+fDown
@@ -178,16 +178,30 @@ def nu_max_func(u):
 ## Epsilon Calculator ##
 ########################
 def eps_calc(u):
-    eps2 = zeros((n,m))
-    eps4 = zeros((n,m))
+    eps2i = zeros((n,m))
+    eps4i = zeros((n,m))
+    eps2j = zeros((n,m))
+    eps4j = zeros((n,m))
+    p = zeros((n,m))
+    c = zeros((n,m))
 
     k2 = 1./4
     k4 = 1./256
 
-    u_vel = u[1,1:n,1:m]/u[0,1:n,1:m]
-    v_vel = u[2,1:n,1:m]/u[0,1:n,1:m]
+    u_vel = 1./2*(u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[1,2:n+2,1:m+1]/u[0,2:n+2,1:m+1])
+    v_vel = 1./2*(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[2,1:n+1,2:m+2]/u[0,1:n+1,2:m+2])
 
-    eps2[:,:] = 1./2*k2*(
+    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
+    c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
+
+    #Compute Max Nu values to be used in epsilon calculations
+    (maxNui,maxNuj) = nu_max_func(u)
+
+    eps2i[:,:] = 1./2*k2*(u_vel[:,:]*sxx[:,:]+v_vel*sxy[:,:]+c[:,:]*sqrt(sxx[:,:]**2+sxy[:,:]**2))*maxNui[:,:]
+    eps2j[:,:] = 1./2*k2*(u_vel[:,:]*syx[:,:]+v_vel*syy[:,:]+c[:,:]*sqrt(syx[:,:]**2+syy[:,:]**2))*maxNuj[:,:]
+    
+    eps4i[:,:] = maximum(zeros((n,m)),1./2*k4*(u_vel[:,:]*sxx[:,:]+v_vel*sxy[:,:]+c[:,:]*sqrt(sxx[:,:]**2+sxy[:,:]**2))-eps2i[:,:])
+    eps4j[:,:] = maximum(zeros((n,m)),1./2*k2*(u_vel[:,:]*syx[:,:]+v_vel*syy[:,:]+c[:,:]*sqrt(syx[:,:]**2+syy[:,:]**2))-eps2j[:,:])
     return
 ####################
 ## Tau Calculator ##
