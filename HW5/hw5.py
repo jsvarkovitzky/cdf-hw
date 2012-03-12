@@ -136,16 +136,20 @@ def flux(u):
     maxNu = zeros((n,m))
 
     #Compute flux for each direction individually without dissapation
-    fRight[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:])
-    fLeft[:,:] = 1./2*((F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
-    fUp[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,2:m+2])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
-    fDown[:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
+    fRight[:,:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:])
+    fLeft[:,:,:] = 1./2*((F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    fUp[:,:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,2:m+2])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    fDown[:,:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
 
     #Compute dissapation for each direction
-    eps_val = eps_calc(u)
-#   dRight[:,:] = 
+    (eps2i,eps2j,eps4i,eps4j) = eps_calc(u)
+    dRight[:,:,:] = eps2i[:,:]*(u[:,2:n+2,1:m+1]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,3:mod(n+3,n)+1,1:m+1]-3*u[:,2:n+2,1:m+1]+3*u[:,1:n+1,1:m+1]-u[:,0:n,1:m+1])
+    dLeft[:,1:n,1:m] = dRight[:,0:n-1,1:m]
+    dUp[:,:,:] = eps2j[:,:]*(u[:,1:n+1,2:m+2]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,1:n+1,3:mod(m+3,m)+1]-3*u[:,1:n+1,2:m+2]+3*u[:,1:n+1,1:m+1]-u[:,1:n+1,0:m])
+    dDown[:,1:n,1:m] = dUp[:,1:n,0:m-1]
 
-    Flux = fRight+fLeft+fUp+fDown
+
+    Flux = fRight+fLeft+fUp+fDown-(dRight+dLeft+dUp+dDown)
     return Flux
 
 ####################
@@ -201,8 +205,10 @@ def eps_calc(u):
     eps2j[:,:] = 1./2*k2*(u_vel[:,:]*syx[:,:]+v_vel*syy[:,:]+c[:,:]*sqrt(syx[:,:]**2+syy[:,:]**2))*maxNuj[:,:]
     
     eps4i[:,:] = maximum(zeros((n,m)),1./2*k4*(u_vel[:,:]*sxx[:,:]+v_vel*sxy[:,:]+c[:,:]*sqrt(sxx[:,:]**2+sxy[:,:]**2))-eps2i[:,:])
-    eps4j[:,:] = maximum(zeros((n,m)),1./2*k2*(u_vel[:,:]*syx[:,:]+v_vel*syy[:,:]+c[:,:]*sqrt(syx[:,:]**2+syy[:,:]**2))-eps2j[:,:])
-    return
+    eps4j[:,:] = maximum(zeros((n,m)),1./2*k4*(u_vel[:,:]*syx[:,:]+v_vel*syy[:,:]+c[:,:]*sqrt(syx[:,:]**2+syy[:,:]**2))-eps2j[:,:])
+
+    return(eps2i,eps2j,eps4i,eps4j)
+
 ####################
 ## Tau Calculator ##
 ####################
@@ -278,8 +284,7 @@ g = 1.4
 p_0 = 10**5
 rho = 1
 M_stream = 0.85
-CFL = 1.6
-
+CFL = 0.5
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
 
@@ -304,7 +309,7 @@ print "Initializing vectors..."
 #Set IC's and BC's together assuming an initial uniform velocity field
 u = zeros((4,n+2,m+2))
 tau = zeros((4,n,m))
-u[0,:,:] = 1.0*1000#initialize rho
+u[0,:,:] = 1.0#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
@@ -320,22 +325,33 @@ u2 = zeros((4,n+2,m+2))
 u3 = zeros((4,n+2,m+2))
 
 
+figure(1)
+contourf(x,y,u[0,1:n+1,1:m+1])
+show()
 
-for i in range(0,2):
+for i in range(0,10):
 
     #Branch Cut BC
     u[:,-1,:] = u[:,1,:]
     u[:,0,:] = u[:,-2,:]
-    FF = flux(u)
+
+    print i
 #    print "******************************"
 #    print "** Dont forget the outer BC **"
 #    print "******************************"
+#
+#
+#    print "**************************************"
+#    print "** Dont forget To look at residuals **"
+#    print "**************************************"
+    
+    u1[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a1*tau[:,:]*flux(u[:,:,:])
+    u2[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a2*tau[:,:]*flux(u1[:,:,:])
+    u3[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a3*tau[:,:]*flux(u2[:,:,:])
+    u[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a4*tau[:,:]*flux(u3[:,:,:])
 
-    
-#    u1[:,:,:] = u[:,:,:] - a1*tau[:,:]*flux(u[:,:,:])
-#    u2[:,:,:] = u[:,:,:] - a2*tau[:,:]*flux(u1[:,:,:])
-#    u3[:,:,:] = u[:,:,:] - a3*tau[:,:]*flux(u2[:,:,:])
-#    u[:,:,:] = u[:,:,:] - a4*tau[:,:]*flux(u3[:,:,:])
-    
+figure(2)
+contourf(x,y,u[0,1:n+1,1:m+1])
+show()
 print time.time() - start_time, "seconds"
 
