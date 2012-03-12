@@ -73,8 +73,6 @@ def f_func(u):
     F = zeros((4,N,M))
     p = zeros((N,M))
     
-    u[0,:,:] = rho
-
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
     F[0,:,:] = u[1,:,:]
     F[1,:,:] = u[1,:,:]**2/u[0,:,:] + p[:,:]
@@ -97,8 +95,6 @@ def g_func(u):
     M = shape(u)[2]
     G = zeros((4,N,M))
     p = zeros((N,M))
-
-    u[0,:,:] = rho
 
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))
     G[0,:,:] = u[1,:,:]
@@ -144,9 +140,9 @@ def flux(u):
     #Compute dissapation for each direction
     (eps2i,eps2j,eps4i,eps4j) = eps_calc(u)
     dRight[:,:,:] = eps2i[:,:]*(u[:,2:n+2,1:m+1]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,3:mod(n+3,n)+1,1:m+1]-3*u[:,2:n+2,1:m+1]+3*u[:,1:n+1,1:m+1]-u[:,0:n,1:m+1])
-    dLeft[:,1:n,1:m] = dRight[:,0:n-1,1:m]
+    dLeft[:,1:n,1:m] = -dRight[:,0:n-1,1:m]
     dUp[:,:,:] = eps2j[:,:]*(u[:,1:n+1,2:m+2]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,1:n+1,3:mod(m+3,m)+1]-3*u[:,1:n+1,2:m+2]+3*u[:,1:n+1,1:m+1]-u[:,1:n+1,0:m])
-    dDown[:,1:n,1:m] = dUp[:,1:n,0:m-1]
+    dDown[:,1:n,1:m] = -dUp[:,1:n,0:m-1]
 
 
     Flux = fRight+fLeft+fUp+fDown-(dRight+dLeft+dUp+dDown)
@@ -196,6 +192,11 @@ def eps_calc(u):
     v_vel = 1./2*(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[2,1:n+1,2:m+2]/u[0,1:n+1,2:m+2])
 
     p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
+    for i in range(0,n):
+        for j in range(0,m):
+            if p[i,j] < 0:
+                print "P less than zeros at: ",i,j
+                
     c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
 
     #Compute Max Nu values to be used in epsilon calculations
@@ -277,14 +278,15 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 ##################
 ## Main Program ##
 ##################
+seterr('raise')
 start_time = time.time()
 n = 128
 m = 64
 g = 1.4
 p_0 = 10**5
-rho = 1
+rho = 1.
 M_stream = 0.85
-CFL = 0.5
+CFL = 1.6
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
 
@@ -312,7 +314,8 @@ tau = zeros((4,n,m))
 u[0,:,:] = 1.0#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
-u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
+u[3,:,:] = p_0/(g-1)+rho*(M_stream**2)/2#initialize energy
+#u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
 
 a1 = 1./4
 a2 = 1./3
@@ -336,6 +339,7 @@ for i in range(0,10):
     u[:,0,:] = u[:,-2,:]
 
     print i
+    
 #    print "******************************"
 #    print "** Dont forget the outer BC **"
 #    print "******************************"
@@ -344,12 +348,18 @@ for i in range(0,10):
 #    print "**************************************"
 #    print "** Dont forget To look at residuals **"
 #    print "**************************************"
-    
+    u1[:,:] = u[:,:]
+    u2[:,:] = u[:,:]
+    u3[:,:] = u[:,:]
     u1[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a1*tau[:,:]*flux(u[:,:,:])
+#    print "boo u1"
+#    print u1
     u2[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a2*tau[:,:]*flux(u1[:,:,:])
+#    print "boo u2"
     u3[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a3*tau[:,:]*flux(u2[:,:,:])
+#    print "boo u3"
     u[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a4*tau[:,:]*flux(u3[:,:,:])
-
+    
 figure(2)
 contourf(x,y,u[0,1:n+1,1:m+1])
 show()
