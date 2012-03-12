@@ -133,24 +133,25 @@ def flux(u):
 
     #Compute flux for each direction individually without dissapation
     fRight[:,:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,2:n+2,1:m+1])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,2:n+2,1:m+1])*sxy[:,:])
-    fLeft[:,:,:] = 1./2*((F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
-    fUp[:,:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,2:m+2])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
-    fDown[:,:,:] = 1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
+    fLeft[:,:,:] =  1./2*((F[:,0:n,1:m+1]+F[:,1:n+1,1:m+1])*sxx[:,:]+(G[:,0:n,1:m+1]+G[:,1:n+1,1:m+1])*sxy[:,:])
+    fUp[:,:,:] =    1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,2:m+2])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,2:m+2])*sxy[:,:])
+    fDown[:,:,:] =  1./2*((F[:,1:n+1,1:m+1]+F[:,1:n+1,0:m])*sxx[:,:]+(G[:,1:n+1,1:m+1]+G[:,1:n+1,0:m])*sxy[:,:])
 
     #Compute dissapation for each direction
+
     (eps2i,eps2j,eps4i,eps4j) = eps_calc(u)
     dRight[:,:,:] = eps2i[:,:]*(u[:,2:n+2,1:m+1]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,3:mod(n+3,n)+1,1:m+1]-3*u[:,2:n+2,1:m+1]+3*u[:,1:n+1,1:m+1]-u[:,0:n,1:m+1])
     dLeft[:,1:n,1:m] = -dRight[:,0:n-1,1:m]
-    dUp[:,:,:] = eps2j[:,:]*(u[:,1:n+1,2:m+2]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,1:n+1,3:mod(m+3,m)+1]-3*u[:,1:n+1,2:m+2]+3*u[:,1:n+1,1:m+1]-u[:,1:n+1,0:m])
+    ########CHECK THIS#####
+#    dUp[:,:,:] = eps2j[:,:]*(u[:,1:n+1,2:m+2]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,1:n+1,3:mod(m+3,m)+1]-3*u[:,1:n+1,2:m+2]+3*u[:,1:n+1,1:m+1]-u[:,1:n+1,0:m])
     dDown[:,1:n,1:m] = -dUp[:,1:n,0:m-1]
-
 
     Flux = fRight+fLeft+fUp+fDown-(dRight+dLeft+dUp+dDown)
     return Flux
 
-####################
-## Tau Calculator ##
-####################
+###################
+## Nu Calculator ##
+##################
 def nu_max_func(u):
     #This function computes the maximum nu required for the dissapation calculation and return an n x m vector of values
     
@@ -191,11 +192,12 @@ def eps_calc(u):
     u_vel = 1./2*(u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[1,2:n+2,1:m+1]/u[0,2:n+2,1:m+1])
     v_vel = 1./2*(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[2,1:n+1,2:m+2]/u[0,1:n+1,2:m+2])
 
-    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
-    for i in range(0,n):
-        for j in range(0,m):
-            if p[i,j] < 0:
-                print "P less than zeros at: ",i,j
+#    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
+    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u_vel[:,:]**2+v_vel[:,:]**2)/(2*u[0,1:n+1,1:m+1]))
+#    for i in range(0,n):
+#        for j in range(0,m):
+#            if p[i,j] < 0:
+#                print "P less than zeros at: ",i,j
                 
     c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
 
@@ -219,10 +221,29 @@ def tau_func(u):
     tau = zeros((n,m))
     c = zeros((n,m))
     p = zeros((n,m))
+    dsxi = zeros((n,m))
+    dsxj = zeros((n,m))
+    dsyi = zeros((n,m))
+    dsyj = zeros((n,m))
+       
+    dsxi[:,:] = 1./2*(sxx[0:n,:]+sxx[range(1,n+1).append(0),:])
+    dsxj[:,1:m] = 1./2*(sxy[:,0:m-1]+sxy[:,1:m])
+    dsxj[:,0] = 0
+
+    dsyi[:,:] = 1./2*(syx[0:n,:]+syx[range(1,n+1).append(0),:])
+    dsyj[:,1:m] = 1./2*(syy[:,0:m-1]+syy[:,1:m])
+    dsyj[:,0] = 0
 
     p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
     c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
-    tau[:,:] = CFL/(abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syy[:,:]))
+#    tau[:,:] = CFL/(abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syy[:,:]))
+    print shape(dsxi[:,:])
+    a = abs((abs(u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])+c[:,:])*dsxi[:,:])
+    b = abs((abs(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])+c[:,:])*dsxj[:,:])
+    c = abs((abs(u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])+c[:,:])*dsyi[:,:])
+    d = abs((abs(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])+c[:,:])*dsyj[:,:])
+    tau[:,:] = CFL/(a+b+c+d)
+
     return(tau)
 
 ##################
@@ -286,19 +307,14 @@ g = 1.4
 p_0 = 10**5
 rho = 1.
 M_stream = 0.85
-CFL = 1.6
+CFL = 1.2
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
-
-print "-> The shape of the orig girds are: [%r %s]"%(shape(x_mesh)[0],shape(x_mesh)[1])
-
 #N,M are from shape of inputted grid
 N = shape(x_mesh)[0]
 M = shape(x_mesh)[1]
-
 print "Computing Cell Centers..."
 (x,y) = cellCenters(x_mesh,y_mesh)
-print "-> The shape of the cell center grids are: [%r %s]"%(shape(x)[0],shape(x)[1])
 print "Computing Cell Areas..."
 omega = cellAreas(x_mesh,y_mesh)
 print "Computing Cell Normals..."
@@ -328,40 +344,50 @@ u2 = zeros((4,n+2,m+2))
 u3 = zeros((4,n+2,m+2))
 
 
-figure(1)
-contourf(x,y,u[0,1:n+1,1:m+1])
-show()
+#figure(1)
+#contourf(x,y,u[0,1:n+1,1:m+1])
+#show()
 
-for i in range(0,10):
 
+
+for i in range(0,2):
+    tau[:,:] = tau_func(u)
     #Branch Cut BC
     u[:,-1,:] = u[:,1,:]
     u[:,0,:] = u[:,-2,:]
 
     print i
-    
+
 #    print "******************************"
 #    print "** Dont forget the outer BC **"
 #    print "******************************"
-#
-#
-#    print "**************************************"
-#    print "** Dont forget To look at residuals **"
-#    print "**************************************"
-    u1[:,:] = u[:,:]
-    u2[:,:] = u[:,:]
-    u3[:,:] = u[:,:]
+
+
     u1[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a1*tau[:,:]*flux(u[:,:,:])
-#    print "boo u1"
-#    print u1
+
+    u1[:,:] = u[:,:]
+    u1[:,-1,:] = u1[:,1,:]
+    u1[:,0,:] = u1[:,-2,:]
+
     u2[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a2*tau[:,:]*flux(u1[:,:,:])
-#    print "boo u2"
+
+    u2[:,:] = u[:,:]
+    u2[:,-1,:] = u2[:,1,:]
+    u2[:,0,:] = u2[:,-2,:]
+
     u3[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a3*tau[:,:]*flux(u2[:,:,:])
-#    print "boo u3"
+
+    u3[:,:] = u[:,:]
+    u3[:,-1,:] = u3[:,1,:]
+    u3[:,0,:] = u3[:,-2,:]
+
     u[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a4*tau[:,:]*flux(u3[:,:,:])
+ 
     
+   
 figure(2)
-contourf(x,y,u[0,1:n+1,1:m+1])
+contourf(x,y,u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])
+colorbar()
 show()
 print time.time() - start_time, "seconds"
 
