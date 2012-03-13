@@ -56,8 +56,8 @@ def cellNorms(xs,ys):
     sxy = zeros((n,m))
     syx = zeros((n,m))
     syy = zeros((n,m))
-    sxx[0:n,0:m] = ys[1:N,1:M]-ys[1:N,0:M-1]
-    sxy[0:n,0:m] = -(xs[1:N,1:M]-xs[1:N,0:M-1])
+    sxx[0:n,0:m] = -(ys[1:N,1:M]-ys[1:N,0:M-1])
+    sxy[0:n,0:m] = (xs[1:N,1:M]-xs[1:N,0:M-1])
     syx[0:n,0:m] = sxy[:,:]
     syy[0:n,0:m] = -sxx[:,:]
 
@@ -163,6 +163,7 @@ def nu_max_func(u):
 
     p[:,:] = (g-1)*(u[3,:,:]-(u[1,:,:]**2+u[2,:,:]**2)/(2*u[0,:,:]))    
 
+
     nui[:,:] = abs((p[0:n,1:m+1]-2*p[1:n+1,1:m+1]+p[2:n+2,1:m+1])/(p[0:n,1:m+1]+2*p[1:n+1,1:m+1]+p[2:n+2,1:m+1]))
     nuj[:,:] = abs((p[1:n+1,0:m]-2*p[1:n+1,1:m+1]+p[1:n+1,2:m+2])/(p[1:n+1,0:m]+2*p[1:n+1,1:m+1]+p[1:n+1,2:m+2]))
 
@@ -194,13 +195,16 @@ def eps_calc(u):
 
 #    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
     p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u_vel[:,:]**2+v_vel[:,:]**2)/(2*u[0,1:n+1,1:m+1]))
+    print "The max and min of p/p_0 are", p.max()/p_0, p.min()/p_0
+
 #    for i in range(0,n):
 #        for j in range(0,m):
 #            if p[i,j] < 0:
 #                print "P less than zeros at: ",i,j
                 
     c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
-
+    
+    print "The max and min  of c are", c.max(), c.min()
     #Compute Max Nu values to be used in epsilon calculations
     (maxNui,maxNuj) = nu_max_func(u)
 
@@ -306,8 +310,8 @@ m = 64
 g = 1.4
 p_0 = 10**5
 rho = 1.
-M_stream = 0.85
-CFL = 1.2
+M_stream = 0.85*sqrt(10**5/rho)
+CFL = 0.2
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
 #N,M are from shape of inputted grid
@@ -321,7 +325,7 @@ print "Computing Cell Normals..."
 (sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 
 #meshPlotter(x_mesh,y_mesh,x,y)
-#normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
+normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
 print "Initializing vectors..."
 
 #Set IC's and BC's together assuming an initial uniform velocity field
@@ -338,7 +342,7 @@ a2 = 1./3
 a3 = 1./2
 a4 = 1./1
 #Calculate tau for all cells, zero values are in the ghost cells
-tau[:,:] = tau_func(u)
+
 u1 = zeros((4,n+2,m+2))
 u2 = zeros((4,n+2,m+2))
 u3 = zeros((4,n+2,m+2))
@@ -350,8 +354,9 @@ u3 = zeros((4,n+2,m+2))
 
 
 
-for i in range(0,2):
+for i in range(0,3):
     tau[:,:] = tau_func(u)
+    print "The max and min of tau are", tau.max(), tau.min()
     #Branch Cut BC
     u[:,-1,:] = u[:,1,:]
     u[:,0,:] = u[:,-2,:]
@@ -382,8 +387,9 @@ for i in range(0,2):
     u3[:,0,:] = u3[:,-2,:]
 
     u[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a4*tau[:,:]*flux(u3[:,:,:])
- 
-    
+
+    print "The max and min  of u are", (u[1,:,:]/u[0,:,:]).max(), (u[1,:,:]/u[0,:,:]).min()
+    print "The max and min  of rhoE are", (u[0,:,:]).max(), (u[3,:,:]).min()
    
 figure(2)
 contourf(x,y,u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])
