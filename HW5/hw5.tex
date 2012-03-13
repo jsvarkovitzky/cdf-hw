@@ -1,0 +1,73 @@
+\documentclass[a4paper,12pt,titlepage]{article}
+
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{subfigure}
+
+\parindent=0pt% This enforces no indent!
+\newcommand{\scale}{0.5}
+\begin{document}
+
+
+
+\title{Investigations of Jameson Method in Two Dimensions on a Body Fitted Grid}
+\author{Jonathan Varkovitzky}
+\maketitle
+
+
+\pagestyle{plain} % No headers, just page numbers
+\pagenumbering{roman} % Roman numerals
+\tableofcontents
+
+\newpage
+
+\pagenumbering{roman}
+\setcounter{page}{2}
+%\listoffigures
+
+%\newpage
+
+\pagenumbering{arabic}
+\abstract{Here we discuss an attempt to implament the Jameson method on the two dimmensional body fitted grid developed in homework 3 of this course.  Unfortunantly the attempts were unsucessful and here we discuss suspected errors and problems with our code.}
+\newpage
+
+\section{Problem Statement and Grid Setup}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{normals.png}
+    \caption{Cell normals plotted with the cell mesh}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{normals_zoom.png}
+    \caption{Cell normals near the left edge of the grid}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{centers.png}
+    \caption{Cell centers plotted with the cell mesh}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{centers_zoom.png}
+    \caption{Cell centers near the left edge of the grid}
+  \end{center}
+\end{figure}
+
+
+
+\end{document}
+
+% LocalWords:  MacCormick paramers MacCormack
