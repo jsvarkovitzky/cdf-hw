@@ -56,10 +56,10 @@ def cellNorms(xs,ys):
     sxy = zeros((n,m))
     syx = zeros((n,m))
     syy = zeros((n,m))
-    sxx[0:n,0:m] = -(ys[1:N,1:M]-ys[1:N,0:M-1])
-    sxy[0:n,0:m] = (xs[1:N,1:M]-xs[1:N,0:M-1])
-    syx[0:n,0:m] = sxy[:,:]
-    syy[0:n,0:m] = -sxx[:,:]
+    sxx[0:n,0:m] = (ys[1:N,1:M]-ys[1:N,0:M-1])
+    sxy[0:n,0:m] = -(xs[1:N,1:M]-xs[1:N,0:M-1])
+    syx[0:n,0:m] = -sxy[:,:]
+    syy[0:n,0:m] = sxx[:,:]
 
     return (sxx,sxy,syx,syy)
 
@@ -194,11 +194,6 @@ def eps_calc(u):
 #    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
     p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u_vel[:,:]**2+v_vel[:,:]**2)/(2*u[0,1:n+1,1:m+1]))
     print "The max and min of p/p_0 are", p.max()/p_0, p.min()/p_0
-
-#    for i in range(0,n):
-#        for j in range(0,m):
-#            if p[i,j] < 0:
-#                print "P less than zeros at: ",i,j
                 
     c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
     
@@ -248,6 +243,66 @@ def tau_func(u):
 
     return(tau)
 
+#################################
+## Boundary Condition Enforcer ##
+#################################
+
+def bc_enforce(u):
+    #Note that Airfoil BC is enforced inside of flux functions and hence are not addressed by this function
+
+    #Branch Cut BC
+    u[:,-1,:] = u[:,1,:]
+    u[:,0,:] = u[:,-2,:]
+
+    
+    #Outer BC
+    pInt = zeros(n)
+    pInt[:] = (g-1)*(u[3,1:n+1,-2]-(u[1,1:n+1,-2]**2+u[2,1:n+1,-2]**2)/(2*u[0,1:n+1,-2]))
+    for i in range(1,n):
+        #Inflow Condition
+        if syx[i,-1] < 0:
+            uni = u[1,i,-2]/u[0,i,-2]*syx[i,-2]
+            rnb = M_stream*syx[i,-2]+2*sqrt(p_0/rho)/(g-1)
+            rni = uni-2*sqrt(pInt[i]/u[0,i,-2])/(g-1)
+            cb =  1./2*(rnb-rni)*(g-1)/4
+            unb = 1./2*(rnb+rni)
+            utb = M_stream*syx[i,-2]
+
+            #Rho Boundary
+            u[0,i,-1] = (cb**2/p_0*rho**g)**(1/(g-1))
+            #pressure on Boundary
+            pb = cb**2*u[0,i,-2]
+            #rho*u Boundary
+            u[1,i,-1] = u[0,i,-2]*(unb*syx[i,-2]+utb*syx[i,-2])
+            #rho*v Boundary
+            u[2,i,-1] = u[0,i,-2]*(unb*syy[i,-2]+utb*syy[i,-2])
+            #rho*E Boundary
+            u[3,i,-1] = pInt[i]/(g-1)+u[0,i,-2]*((u[1,i,-2]/u[0,i,-2])**2+(u[2,i,-2]/u[0,i,-2])**2)/2
+
+        #Outflow Condition
+        else:
+            uni = u[1,i,-1]/u[0,i,-1]*syx[i,-1]
+            rnb =-u[1,i,-1]/u[0,i,-1]*syx[i,-1]+2*sqrt(pInt[i]/u[0,i,-1])/(g-1)
+            rni = uni-2*sqrt(pInt[i]/u[0,i,-1])/(g-1)
+            cb =  1./2*(rnb-rni)*(4-1)/4
+            unb = 1./2*(rnb+rni)
+            utb = M_stream*syx[i,-1]
+
+            #Rho Boundary
+            u[0,i,-1] = (cb**2/pInt[i]*u[0,i,-1]**g)**(1/(g-1))
+            #pressure on Boundary
+            pb = cb**2*u[0,i,-1]
+            #rho*u Boundary
+            u[1,i,-1] = u[0,i,-1]*(unb*syx[i,-1]+utb*syx[i,-1])
+             #rho*v Boundary
+            u[2,i,-1] = u[0,i,-1]*(unb*syy[i,-1]+utb*syy[i,-1])
+            #rho*E Boundary
+            u[3,i,-1] = pInt[i]/(g-1)+u[0,i,-1]*((u[1,i,-1]/u[0,i,-1])**2+(u[2,i,-1]/u[0,i,-1])**2)/2
+   
+    return u
+
+
+
 ##################
 ## Mesh Plotter ##
 ##################
@@ -268,15 +323,17 @@ def meshPlotter(xs,ys,x,y):
 ###########################
 def normalPlotter(x,y,xs,ys,sxx,sxy,syx,syy):
     figure(2)
+
     for i in range(0,n+1):
         plot(xs[i,:],ys[i,:],'b')
     for j in range(0,m+1):
         plot(xs[:,j],ys[:,j],'b')
     scale = 10000
- #   plot(x,y,'r.')
-    quiver(x,y,sxx*scale,sxy*scale)
-    quiver(x,y,syx*scale,syy*scale)
-    title('Cell Normal Directions')
+    plot(x,y,'r.')
+ #   quiver(x,y,sxx*scale,sxy*scale)
+ #   quiver(x,y,syx*scale,syy*scale)
+#    axis([-10.1,-8.5,-1.3,1.3])
+    title('Cell Centers')
     xlabel('x')
     ylabel('y')
 
@@ -298,15 +355,29 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
 
     return
 
+
+####################
+## Plotting Tools ##
+####################
+def plotResults(u):
+    figure(3)
+    title('Velocity') 
+    contourf(x,y,sqrt((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])**2+(u[2,1:n+1,1:m+1]/u1[0,1:n+1,1:m+1])**2))
+    colorbar()
+    savefig('velocity_u1.png')
+    show()
+    return
+
 ##################
 ## Main Program ##
 ##################
 seterr('raise')
+close('all')
 start_time = time.time()
 n = 128
 m = 64
 g = 1.4
-p_0 = 10**5
+p_0 = 1.*10**5
 rho = 1.
 M_stream = 0.85*sqrt(10**5/rho)
 CFL = 0.2
@@ -345,53 +416,42 @@ u1 = zeros((4,n+2,m+2))
 u2 = zeros((4,n+2,m+2))
 u3 = zeros((4,n+2,m+2))
 
-
 #figure(1)
 #contourf(x,y,u[0,1:n+1,1:m+1])
-#show()
+
+#Compute which cells are inflow vs. outflow
 
 
-
-for i in range(0,3):
+for i in range(0,1):
+    print i
     tau[:,:] = tau_func(u)
     print "The max and min of tau are", tau.max(), tau.min()
-    #Branch Cut BC
-    u[:,-1,:] = u[:,1,:]
-    u[:,0,:] = u[:,-2,:]
-
-    print i
-
-#    print "******************************"
-#    print "** Dont forget the outer BC **"
-#    print "******************************"
-
+    
+#    u = bc_enforce(u)
 
     u1[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a1*tau[:,:]*flux(u[:,:,:])
-
-    u1[:,:] = u[:,:]
-    u1[:,-1,:] = u1[:,1,:]
-    u1[:,0,:] = u1[:,-2,:]
+    
+    u1 = bc_enforce(u1)
+#    u1[:,:] = u[:,:]
+#    u1[:,-1,:] = u1[:,1,:]
+#    u1[:,0,:] = u1[:,-2,:]
 
     u2[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a2*tau[:,:]*flux(u1[:,:,:])
-
-    u2[:,:] = u[:,:]
-    u2[:,-1,:] = u2[:,1,:]
-    u2[:,0,:] = u2[:,-2,:]
+#    u2 = bc_enforce(u2)
+#    u2[:,:] = u[:,:]
+#    u2[:,-1,:] = u2[:,1,:]
+#    u2[:,0,:] = u2[:,-2,:]
 
     u3[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a3*tau[:,:]*flux(u2[:,:,:])
-
-    u3[:,:] = u[:,:]
-    u3[:,-1,:] = u3[:,1,:]
-    u3[:,0,:] = u3[:,-2,:]
+#    u3 = bc_enforce(u3)
+#    u3[:,:] = u[:,:]
+#    u3[:,-1,:] = u3[:,1,:]
+#    u3[:,0,:] = u3[:,-2,:]
 
     u[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a4*tau[:,:]*flux(u3[:,:,:])
 
     print "The max and min  of u are", (u[1,:,:]/u[0,:,:]).max(), (u[1,:,:]/u[0,:,:]).min()
     print "The max and min  of rhoE are", (u[0,:,:]).max(), (u[3,:,:]).min()
    
-figure(2)
-contourf(x,y,u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])
-colorbar()
-show()
 print time.time() - start_time, "seconds"
 

@@ -32,11 +32,21 @@
 %\newpage
 
 \pagenumbering{arabic}
-\abstract{Here we discuss an attempt to implament the Jameson method on the two dimmensional body fitted grid developed in homework 3 of this course.  Unfortunantly the attempts were unsucessful and here we discuss suspected errors and problems with our code.}
+\abstract{Here we discuss an attempt to implament the Jameson finite volume method on the two dimmensional body fitted grid developed in homework 3 of this course about the NACA-0012 airfoil to solve Eulers equations.  Unfortunantly the attempts were unsucessful and here we discuss suspected errors and problems with our code.}
 \newpage
 
 \section{Problem Statement and Grid Setup}
 
+For this problem we want to simulate the two dimensional flow of air over a NACA-0012 airfoil based on the Euler equations.  We represented the Euler equations as a system shown below:
+
+\begin{eqnarray}
+&& \frac{\partial U}{\partial t} + \frac{\partial F}{\partial x} + \frac{\partial G}{\partial y}\nonumber \\
+&& U = \begin{bmatrix} \rho \\ \rho u \\ \rho v \\ \rho E \end{bmatrix},\ 
+   F = \begin{bmatrix} \rho u\\ \rho u^2+P\\ \rho u v \\ \rho u H\end{bmatrix},\
+   G = \begin{bmatrix} \rho v\\ \rho u v\\ \rho v^2 + P \\ \rho v H\end{bmatrix}
+\end{eqnarray}
+
+  To do this we aimed to use the Jameson finite volume method on a body fitted grid.  The grid we used was created in homework 3.  From This grid we are able to compute the cell normals and cell centers which are nessisary for the finit volume calculations.  For each cell we computed only two normals, an outward and clockwise normal.  The reason for this is that when combining with information from the surrouding cells information for all four normals is avaliable.  Both global and a sample zoomed in portions of these two parameters are shown on the following pages.
 \begin{figure}[H]
   \begin{center}
     \includegraphics[scale=\scale]{normals.png}
@@ -67,7 +77,28 @@
 \end{figure}
 
 
+\section{Initial Conditions}
+The initial conditions that we used in our simulation are those assuming a constant flow purely in the x direction with constant density.  These initial conditions are described as follows as imposed on Euler's equation:
+
+\begin{equation}
+\begin{bmatrix}
+\rho \\ \rho u \\ \rho v \\ \rho E
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 \\ M_{stream} \\ 0 \\ 286125.0
+\end{bmatrix}
+\end{equation}
+
+Where the initial velocity is set to $M_{stream} = 0.85$ times the mach number.  
+
+\section{Boundary Conditions}
+In this problem there are three regions in which we need to consider the boundary conditions.  These three regions are the outer circle, the airfoil, and the branch cut.  On the outer boundary we need to consider the steady state velocity and its relation to the outward norm.  If we are in a region on the boundary in which the outward normal has a negative x component then we consider it an inflow boundary, while if the outward normal has a positive x component then we consider it an outflow boundary.  The boundary at the airfoil is a soild wall boundary where we enforce that no fluid can flow in the normal direction, however it can flow tangentially to the surface.  The final boundary of the branch cut is enforced by having a periodic boundary which makes the flow symmetric about the branch cut.  
+
+\section{Numerical Scheme}
+To solve for how the flow evolves we used a Jameson finite volume scheme along with a four step Runga-Kutta time steping scheme.    
+
+
+
 
 \end{document}
-
-% LocalWords:  MacCormick paramers MacCormack
