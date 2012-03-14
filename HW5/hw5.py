@@ -10,7 +10,6 @@ from pylab import *
 import time
 import os
 
-
 ################
 ## Load Grids ##
 ################
@@ -141,8 +140,7 @@ def flux(u):
     (eps2i,eps2j,eps4i,eps4j) = eps_calc(u)
     dRight[:,:,:] = eps2i[:,:]*(u[:,2:n+2,1:m+1]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,3:mod(n+3,n)+1,1:m+1]-3*u[:,2:n+2,1:m+1]+3*u[:,1:n+1,1:m+1]-u[:,0:n,1:m+1])
     dLeft[:,1:n,1:m] = -dRight[:,0:n-1,1:m]
-    ########CHECK THIS#####
-#    dUp[:,:,:] = eps2j[:,:]*(u[:,1:n+1,2:m+2]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,1:n+1,3:mod(m+3,m)+1]-3*u[:,1:n+1,2:m+2]+3*u[:,1:n+1,1:m+1]-u[:,1:n+1,0:m])
+    dUp[:,:,:] = eps2j[:,:]*(u[:,1:n+1,2:m+2]-u[:,1:n+1,1:m+1]) - eps4i[:,:]*(u[:,1:n+1,3:mod(m+3,m)+1]-3*u[:,1:n+1,2:m+2]+3*u[:,1:n+1,1:m+1]-u[:,1:n+1,0:m])
     dDown[:,1:n,1:m] = -dUp[:,1:n,0:m-1]
 
     Flux = fRight+fLeft+fUp+fDown-(dRight+dLeft+dUp+dDown)
@@ -191,7 +189,6 @@ def eps_calc(u):
     u_vel = 1./2*(u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[1,2:n+2,1:m+1]/u[0,2:n+2,1:m+1])
     v_vel = 1./2*(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+u[2,1:n+1,2:m+2]/u[0,1:n+1,2:m+2])
 
-#    p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
     p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u_vel[:,:]**2+v_vel[:,:]**2)/(2*u[0,1:n+1,1:m+1]))
     print "The max and min of p/p_0 are", p.max()/p_0, p.min()/p_0
                 
@@ -233,7 +230,7 @@ def tau_func(u):
 
     p[:,:] = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
     c[:,:] = sqrt(p[:,:]/u[0,1:n+1,1:m+1])
-#    tau[:,:] = CFL/(abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*sxy[:,:])+abs((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syx[:,:]+(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1]+c[:,:])*syy[:,:]))
+
     print shape(dsxi[:,:])
     a = abs((abs(u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])+c[:,:])*dsxi[:,:])
     b = abs((abs(u[2,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])+c[:,:])*dsxj[:,:])
@@ -253,7 +250,6 @@ def bc_enforce(u):
     #Branch Cut BC
     u[:,-1,:] = u[:,1,:]
     u[:,0,:] = u[:,-2,:]
-
     
     #Outer BC
     pInt = zeros(n)
@@ -330,9 +326,9 @@ def normalPlotter(x,y,xs,ys,sxx,sxy,syx,syy):
         plot(xs[:,j],ys[:,j],'b')
     scale = 10000
     plot(x,y,'r.')
- #   quiver(x,y,sxx*scale,sxy*scale)
- #   quiver(x,y,syx*scale,syy*scale)
-#    axis([-10.1,-8.5,-1.3,1.3])
+    quiver(x,y,sxx*scale,sxy*scale)
+    quiver(x,y,syx*scale,syy*scale)
+    axis([-10.1,-8.5,-1.3,1.3])
     title('Cell Centers')
     xlabel('x')
     ylabel('y')
@@ -347,7 +343,7 @@ def velocityPlotter(x,y,xs,ys,x_vec,y_vec):
         plot(xs[i,:],ys[i,:],'b')
     for j in range(0,m+1):
         plot(xs[:,j],ys[:,j],'b')
- #   plot(x,y,'r.')
+    plot(x,y,'r.')
     quiver(x,y,x_vec,y_vec)
     title('Velocity Directions')
     xlabel('x')
@@ -364,10 +360,99 @@ def plotResults(u):
     title('Velocity') 
     contourf(x,y,sqrt((u[1,1:n+1,1:m+1]/u[0,1:n+1,1:m+1])**2+(u[2,1:n+1,1:m+1]/u1[0,1:n+1,1:m+1])**2))
     colorbar()
-    savefig('velocity_u1.png')
+#    savefig('velocity_u1.png')
     show()
     return
 
+###################
+## Initial Plots ##
+###################
+def initPlots(u,time):
+    figure(1)
+    contourf(x,y,u[0,1:n+1,1:m+1])
+    colorbar()
+    title('%s Density'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_rho.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_rho_zoom.png'%time)
+
+    figure(2)
+    velocity = sqrt((u[1,1:n+1,1:m+1]**2+u[1,1:n+1,1:m+1]**2)/u[0,1:n+1,1:m+1])
+    contourf(x,y,velocity)
+    colorbar()
+    title('%s Velocity Magnitude'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_vel.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_vel_zoom.png'%time)
+
+    figure(3)
+    p = (g-1)*(u[3,1:n+1,1:m+1]-(u[1,1:n+1,1:m+1]**2+u[2,1:n+1,1:m+1]**2)/(2*u[0,1:n+1,1:m+1]))
+    contourf(x,y,p)
+    colorbar()
+    title('%s Pressure'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_pressure.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_pressure_zoom.png'%time)
+
+    figure(4)
+    c = sqrt(p/u[0,1:n+1,1:m+1])
+    contourf(x,y,velocity/c)
+    colorbar()
+    title('%s Mach Number'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_mach.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_mach_zoom.png'%time)
+
+    figure(5)
+    contourf(x,y,p/u[0,1:n+1,1:m+1]**g)
+    colorbar()
+    title('%s Entropy'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_entropy.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_entropy_zoom.png'%time)
+
+    figure(6)
+    contourf(x,y,(u[3,1:n+1,1:m+1]+p)/(p_0*u[0,1:n+1,1:m+1]))
+    colorbar()
+    title('%s Enthalpy'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_enthalpy.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_enthalpy_zoom.png'%time)
+
+    figure(7)
+    contourf(x,y,(p-p_0)/(1./2*rho*M_stream**2))
+    colorbar()
+    title('%s Pressure Coefficient'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_press_coeff.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_press_coeff_zoom.png'%time)
+
+    figure(8)
+    contourf(x,y,p/p_0)
+    colorbar()
+    title('%s Normalized Pressure'%time)
+    xlabel('x')
+    ylabel('y')
+    savefig('%s_norm_press.png'%time)
+    axis([-0.75, 0.75, -0.75, 0.75])
+    savefig('%s_norm_press_zoom.png'%time)
+    
+       
+    return
 ##################
 ## Main Program ##
 ##################
@@ -381,6 +466,7 @@ p_0 = 1.*10**5
 rho = 1.
 M_stream = 0.85*sqrt(10**5/rho)
 CFL = 0.2
+
 print "Loading Grid Points..."
 (x_mesh,y_mesh) = loadXY()
 #N,M are from shape of inputted grid
@@ -394,7 +480,7 @@ print "Computing Cell Normals..."
 (sxx,sxy,syx,syy) = cellNorms(x_mesh,y_mesh)
 
 #meshPlotter(x_mesh,y_mesh,x,y)
-normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
+#normalPlotter(x,y,x_mesh,y_mesh,sxx,sxy,syx,syy)
 print "Initializing vectors..."
 
 #Set IC's and BC's together assuming an initial uniform velocity field
@@ -404,23 +490,19 @@ u[0,:,:] = 1.0#initialize rho
 u[1,:,:] = M_stream#initialize x velocity
 u[2,:,:] = 0#initialize y velocity
 u[3,:,:] = p_0/(g-1)+rho*(M_stream**2)/2#initialize energy
-#u[3,:,:] = p_0/(g-1)+rho*(u[1,:,:]**2+u[2,:,:]**2)/2#initialize energy
 
+#Ruga-Kutta Coeffs
 a1 = 1./4
 a2 = 1./3
 a3 = 1./2
 a4 = 1./1
-#Calculate tau for all cells, zero values are in the ghost cells
+
 
 u1 = zeros((4,n+2,m+2))
 u2 = zeros((4,n+2,m+2))
 u3 = zeros((4,n+2,m+2))
 
-#figure(1)
-#contourf(x,y,u[0,1:n+1,1:m+1])
-
-#Compute which cells are inflow vs. outflow
-
+initPlots(u,'Initial')
 
 for i in range(0,1):
     print i
@@ -428,25 +510,18 @@ for i in range(0,1):
     print "The max and min of tau are", tau.max(), tau.min()
     
 #    u = bc_enforce(u)
-
+    u1[:,:,:] = u[:,:,:]
+    u2[:,:,:] = u[:,:,:]
+    u3[:,:,:] = u[:,:,:]
     u1[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a1*tau[:,:]*flux(u[:,:,:])
     
     u1 = bc_enforce(u1)
-#    u1[:,:] = u[:,:]
-#    u1[:,-1,:] = u1[:,1,:]
-#    u1[:,0,:] = u1[:,-2,:]
 
     u2[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a2*tau[:,:]*flux(u1[:,:,:])
-#    u2 = bc_enforce(u2)
-#    u2[:,:] = u[:,:]
-#    u2[:,-1,:] = u2[:,1,:]
-#    u2[:,0,:] = u2[:,-2,:]
+    u2 = bc_enforce(u2)
 
     u3[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a3*tau[:,:]*flux(u2[:,:,:])
-#    u3 = bc_enforce(u3)
-#    u3[:,:] = u[:,:]
-#    u3[:,-1,:] = u3[:,1,:]
-#    u3[:,0,:] = u3[:,-2,:]
+    u3 = bc_enforce(u3)
 
     u[:,1:n+1,1:m+1] = u[:,1:n+1,1:m+1] - a4*tau[:,:]*flux(u3[:,:,:])
 

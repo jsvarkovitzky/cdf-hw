@@ -37,7 +37,7 @@
 
 \section{Problem Statement and Grid Setup}
 
-For this problem we want to simulate the two dimensional flow of air over a NACA-0012 airfoil based on the Euler equations.  We represented the Euler equations as a system shown below:
+For this problem we want to simulate a two dimensional flow of air over a NACA-0012 airfoil useing the Euler equations.  We represented the Euler equations as a system of differential equaitions as shown below:
 
 \begin{eqnarray}
 && \frac{\partial U}{\partial t} + \frac{\partial F}{\partial x} + \frac{\partial G}{\partial y}\nonumber \\
@@ -46,7 +46,8 @@ For this problem we want to simulate the two dimensional flow of air over a NACA
    G = \begin{bmatrix} \rho v\\ \rho u v\\ \rho v^2 + P \\ \rho v H\end{bmatrix}
 \end{eqnarray}
 
-  To do this we aimed to use the Jameson finite volume method on a body fitted grid.  The grid we used was created in homework 3.  From This grid we are able to compute the cell normals and cell centers which are nessisary for the finit volume calculations.  For each cell we computed only two normals, an outward and clockwise normal.  The reason for this is that when combining with information from the surrouding cells information for all four normals is avaliable.  Both global and a sample zoomed in portions of these two parameters are shown on the following pages.
+  To perform our computation we aimed to use the Jameson finite volume method on a body fitted grid.  The grid we used was generated using the code from homework 3.  From This grid we are able to compute the cell normals, cell areas, and cell centers which are nessisary for the finit volume calculations.  For each cell we computed only two normals, an outward and clockwise normal.  The reason for this is that when combining with information from the surrouding cells information for all four normals is avaliable.  Both global and a sample zoomed in portions of these two parameters are shown on the following plots:
+
 \begin{figure}[H]
   \begin{center}
     \includegraphics[scale=\scale]{normals.png}
@@ -90,15 +91,145 @@ The initial conditions that we used in our simulation are those assuming a const
 \end{bmatrix}
 \end{equation}
 
-Where the initial velocity is set to $M_{stream} = 0.85$ times the mach number.  
+Where the initial velocity is set to $M_{stream} = 0.85$ times the mach number.  Below we have the plots of the initial values for velocity, pressure, Mach number, total enthalpy, and entropy.  As expected since we initialize the problem with a constant flow all of these values are constant throughout the domain.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Initial_vel.png}
+    \caption{Initial Magnitude of Velocity in the Domain}
+  \end{center}
+\end{figure}
+  
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Initial_pressure.png}
+    \caption{Initial Pressure in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Initial_mach.png}
+    \caption{Initial Mach Number in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Initial_enthalpy.png}
+    \caption{Initial Enthalpy in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Initial_entropy.png}
+    \caption{Initial Entropy in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Initial_press_coeff.png}
+    \caption{Initial Pressure Coefficient in the Domain}
+  \end{center}
+\end{figure}
+
 
 \section{Boundary Conditions}
-In this problem there are three regions in which we need to consider the boundary conditions.  These three regions are the outer circle, the airfoil, and the branch cut.  On the outer boundary we need to consider the steady state velocity and its relation to the outward norm.  If we are in a region on the boundary in which the outward normal has a negative x component then we consider it an inflow boundary, while if the outward normal has a positive x component then we consider it an outflow boundary.  The boundary at the airfoil is a soild wall boundary where we enforce that no fluid can flow in the normal direction, however it can flow tangentially to the surface.  The final boundary of the branch cut is enforced by having a periodic boundary which makes the flow symmetric about the branch cut.  
+In this problem there are three regions in which we need to consider the boundary conditions.  These three regions are the outer circle, the airfoil, and the branch cut.  On the outer boundary we need to consider the far field velocity and its relation to the behavior in the computational domain.  If we are in a region on the boundary in which the outward normal has a negative x component then we consider it an inflow boundary, while if the outward normal has a positive x component then we consider it an outflow boundary.  The boundary at the airfoil is treated as a soild wall boundary where we enforce that no fluid can flow in the normal direction, however it is free to flow tangentially to the surface.  The final boundary of the branch cut is enforced by having a periodic boundary which makes the flow symmetric about the branch cut.  
 
 \section{Numerical Scheme}
-To solve for how the flow evolves we used a Jameson finite volume scheme along with a four step Runga-Kutta time steping scheme.    
+To solve for how the flow evolves we used a Jameson finite volume scheme along with a four step Runga-Kutta time steping scheme.  The Jameson method is based on measuring the amount of flux going from one cell to another based on their contents and the size of the boundary between them.  It is important to also notice that the time step used is variable for each cell and is also dependant on the velocity of the fluid inside it at each time step.  This may seem counter intuitive that each cell has a different time step, however since we are attempting to solve for the steady state solution it does not matter what size time step is occuring within each cell.  
 
+\section{Numerical Issues}
+After setting up the Jameson and Runga-Kutta numerical methods we ran into serious numerical issues.  After taking the first partial step in the Runga-Kutta scheme the values for pressure were driven negative.  This is both non-physical and leads to the mach number becoming complex.  At first I suspected that this error was arising from the enforced boundary conditions, however after even only one step these negative pressures were arrising at points all throught the domain.  To investigate furthur I plotted the same figures as those done for the initial condition, however I also zoomed up close to the airfoil to investigate how the boundary conditions affected the domain.  There is also a strange behavior that the values are stratified radially.  This stratification, and the degree to which it is happening after just one time step is a sign of errors in the code.  These plots are shown below:
 
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_vel.png}
+    \caption{Final Magnitude of Velocity in the Domain}
+  \end{center}
+\end{figure}
+  
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_vel_zoom.png}
+    \caption{Final Magnitude of Velocity in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_pressure.png}
+    \caption{Final Pressure in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_pressure_zoom.png}
+    \caption{Final Pressure in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_mach.png}
+    \caption{Final Mach Number in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_mach_zoom.png}
+    \caption{Final Mach Number in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_enthalpy.png}
+    \caption{Final Enthalpy in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_enthalpy_zoom.png}
+    \caption{Final Enthalpy in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_entropy.png}
+    \caption{Final Entropy in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_entropy_zoom.png}
+    \caption{Final Entropy in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_press_coeff.png}
+    \caption{Final Pressure Coefficient in the Domain}
+  \end{center}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[scale=\scale]{Final_press_coeff_zoom.png}
+    \caption{Final Pressure Coefficient in the Domain}
+  \end{center}
+\end{figure}
+
+What we would have expected to see in the steady state solution was constant flow over most of the domain, excpect for near the airfoil.  In the region near the airfoil we would have expected to see two lobes of increased velocity, pressure, and density symmetrically above and below the airfoil.  In addition we would expect to see stagnation points at both the leading and trailing edge of the airfoil.  
 
 
 \end{document}
